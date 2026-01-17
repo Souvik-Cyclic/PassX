@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { VaultModule } from './vault/vault.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { VaultModule } from './vault/vault.module';
     AuthModule,
     UserModule,
     VaultModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],
