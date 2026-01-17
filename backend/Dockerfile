@@ -22,7 +22,7 @@ RUN npm install -g pnpm && \
 
 COPY --from=builder /app/dist ./dist
 
-COPY .env .env
+# COPY .env .env
 
 EXPOSE 3000
 
