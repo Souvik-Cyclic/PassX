@@ -535,10 +535,10 @@ The documentation includes:
 ### 📹 Demo Video
 
 <div align="center">
-  <video width="300" controls>
-    <source src="mobile-app/assets/screenshots/PassX-Video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <a href="https://youtu.be/TP1vjZ0ZI7g">
+    <img src="https://img.youtube.com/vi/TP1vjZ0ZI7g/maxresdefault.jpg" alt="PassX Demo Video" width="600"/>
+  </a>
+  <p><a href="https://youtu.be/TP1vjZ0ZI7g">▶️ Watch Demo on YouTube</a></p>
 </div>
 
 ### Authentication Screens
