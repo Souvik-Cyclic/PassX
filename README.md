@@ -627,7 +627,7 @@ Contributions are welcome! Please follow these steps:
 ## 👨‍💻 Author
 
 **Souvik Kumar**  
-GitHub: [https://github.com/Souvik-Cyclic/PassX](https://github.com/Souvik-Cyclic/PassX)
+GitHub: [https://github.com/Souvik-Cyclic/](https://github.com/Souvik-Cyclic/)
 
 ## 🙏 Acknowledgments
 
