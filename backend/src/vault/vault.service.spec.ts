@@ -63,7 +63,7 @@ describe('VaultService', () => {
     expect(model.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: 'v1', userId: 'u1' },
       { encryptedData: 'new' },
-      { new: true },
+      { returnDocument: 'after' },
     );
   });
 

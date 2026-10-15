@@ -25,7 +25,7 @@ export class VaultService {
     const item = await this.vaultModel.findOneAndUpdate(
       { _id: id, userId },
       { encryptedData },
-      { new: true },
+      { returnDocument: 'after' },
     );
 
     if (!item) {
