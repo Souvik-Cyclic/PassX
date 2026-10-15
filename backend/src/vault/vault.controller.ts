@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { VaultService } from './vault.service';
 import { CreateVaultDto } from './dto/create-vault.dto';
 import { UpdateVaultDto } from './dto/update-vault.dto';
-import { User } from 'src/common/decorators/user.decorator';
+import { User } from '../common/decorators/user.decorator';
 
 @ApiTags('Vault')
 @ApiBearerAuth('access-token')

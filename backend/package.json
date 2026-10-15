@@ -80,9 +80,21 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!main.ts",
+      "!**/*.module.ts",
+      "!**/*.spec.ts",
+      "!**/dto/**",
+      "!**/schema/**",
+      "!**/types/**"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "lines": 80,
+        "branches": 70
+      }
+    }
   }
 }
