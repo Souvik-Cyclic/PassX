@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/app.setup';
 
 describe('PassX API (e2e)', () => {
   let app: INestApplication;
@@ -26,14 +27,7 @@ describe('PassX API (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
+    app = configureApp(moduleRef.createNestApplication());
     await app.init();
     http = request(app.getHttpServer());
   });
@@ -140,6 +134,40 @@ describe('PassX API (e2e)', () => {
     it('does not show the item to another user', async () => {
       const res = await http.get('/vault').set(auth(bobToken)).expect(200);
       expect(res.body).toEqual([]);
+    });
+
+    it('leaves the item untouched after the rejected update', async () => {
+      const res = await http.get('/vault').set(auth(aliceToken)).expect(200);
+      expect(res.body[0].encryptedData).toBe('blob2');
+    });
+
+    it('does not let another user delete the item', async () => {
+      await http.delete(`/vault/${itemId}`).set(auth(bobToken)).expect(404);
+      const res = await http.get('/vault').set(auth(aliceToken)).expect(200);
+      expect(res.body).toHaveLength(1);
+    });
+
+    it('rejects unknown fields on create', async () => {
+      await http
+        .post('/vault')
+        .set(auth(aliceToken))
+        .send({ encryptedData: 'x', type: 'password' })
+        .expect(400);
+    });
+
+    it('returns 404 for a malformed id on update', async () => {
+      await http
+        .put('/vault/not-an-objectid')
+        .set(auth(aliceToken))
+        .send({ encryptedData: 'x' })
+        .expect(404);
+    });
+
+    it('returns 404 for a malformed id on delete', async () => {
+      await http
+        .delete('/vault/not-an-objectid')
+        .set(auth(aliceToken))
+        .expect(404);
     });
 
     it('deletes the caller item', async () => {
