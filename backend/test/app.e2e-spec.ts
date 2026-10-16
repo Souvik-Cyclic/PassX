@@ -284,6 +284,18 @@ describe('PassX API (e2e)', () => {
       expect(statuses).toContain(429);
     });
 
+    it('ignores spoofed X-Forwarded-For when no proxy is trusted', async () => {
+      const statuses: number[] = [];
+      for (let i = 0; i < 12; i += 1) {
+        const res = await http
+          .post('/auth/login')
+          .set('X-Forwarded-For', `10.0.0.${i}`)
+          .send({ email: 'nobody2@example.com', authKeyHash: 'x' });
+        statuses.push(res.status);
+      }
+      expect(statuses).toContain(429);
+    });
+
     it('never rate limits liveness probes', async () => {
       for (let i = 0; i < 120; i += 1) {
         await http.get('/health/live').expect(200);

@@ -13,7 +13,7 @@ set -euo pipefail
 
 IMAGE="${1:-}"
 EXPECTED_COMMIT="${2:-}"
-HEALTH_PATH="${HEALTH_PATH:-/health}"
+HEALTH_PATH="${HEALTH_PATH:-/health/live}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-20}"
 MONGO_IMAGE="${MONGO_IMAGE:-mongo:7}"
 

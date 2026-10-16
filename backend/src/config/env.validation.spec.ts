@@ -27,6 +27,7 @@ describe('validationSchema', () => {
     expect(value.METRICS_PORT).toBe(9464);
     expect(value.APP_COMMIT).toBe('unknown');
     expect(value.BREAK_READINESS).toBe(false);
+    expect(value.TRUST_PROXY).toBe(0);
   });
 
   it('requires MONGO_URI and JWT_SECRET', () => {

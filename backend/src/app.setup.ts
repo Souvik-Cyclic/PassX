@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { EnvVars } from './config/env.validation';
@@ -10,6 +11,13 @@ import { buildCorsOptions } from './security/cors';
  */
 export function configureApp(app: INestApplication): INestApplication {
   const config = app.get(ConfigService<EnvVars, true>);
+
+  // req.ip (used for rate-limit keys and logs) honours X-Forwarded-For only
+  // from this many trusted hops; 0 means never trust the header.
+  (app as NestExpressApplication).set(
+    'trust proxy',
+    config.get('TRUST_PROXY', { infer: true }),
+  );
 
   // CSP is off because Swagger UI at /docs relies on inline scripts; every
   // other helmet header (nosniff, frameguard, HSTS, no x-powered-by) stays on.
