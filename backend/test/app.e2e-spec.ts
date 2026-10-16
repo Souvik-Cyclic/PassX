@@ -41,6 +41,32 @@ describe('PassX API (e2e)', () => {
       const res = await http.get('/health').expect(200);
       expect(res.body).toEqual({ status: 'ok' });
     });
+
+    it('GET /health/live returns ok', async () => {
+      const res = await http.get('/health/live').expect(200);
+      expect(res.body).toEqual({ status: 'ok' });
+    });
+
+    it('GET /health/ready reports Mongo up', async () => {
+      const res = await http.get('/health/ready').expect(200);
+      expect(res.body).toMatchObject({ status: 'ok', mongo: 'up' });
+      expect(res.body.latencyMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('version', () => {
+    it('GET /version reports build identity with safe defaults', async () => {
+      const res = await http.get('/version').expect(200);
+      expect(res.body).toMatchObject({
+        commit: 'unknown',
+        imageTag: 'unknown',
+        buildTime: 'unknown',
+        pipelineUrl: 'unknown',
+        pod: 'unknown',
+        node: 'unknown',
+      });
+      expect(Number.isFinite(Date.parse(res.body.startedAt))).toBe(true);
+    });
   });
 
   describe('auth', () => {
