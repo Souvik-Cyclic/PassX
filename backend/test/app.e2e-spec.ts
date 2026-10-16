@@ -255,4 +255,39 @@ describe('PassX API (e2e)', () => {
       await http.get('/metrics').expect(404);
     });
   });
+
+  describe('security', () => {
+    it('sets helmet headers and hides x-powered-by', async () => {
+      const res = await http.get('/health/live').expect(200);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBeDefined();
+      expect(res.headers['x-powered-by']).toBeUndefined();
+    });
+
+    it('sends no CORS headers when CORS_ORIGINS is empty', async () => {
+      const res = await http
+        .get('/health/live')
+        .set('Origin', 'https://evil.example')
+        .expect(200);
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('rate limits repeated login attempts', async () => {
+      const statuses: number[] = [];
+      for (let i = 0; i < 12; i += 1) {
+        const res = await http
+          .post('/auth/login')
+          .send({ email: 'nobody@example.com', authKeyHash: 'x' });
+        statuses.push(res.status);
+      }
+      expect(statuses[0]).toBe(401);
+      expect(statuses).toContain(429);
+    });
+
+    it('never rate limits liveness probes', async () => {
+      for (let i = 0; i < 120; i += 1) {
+        await http.get('/health/live').expect(200);
+      }
+    });
+  });
 });

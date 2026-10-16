@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -10,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import { VersionModule } from './version/version.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
+import { isThrottleExempt } from './security/throttling';
 import { EnvVars, validationSchema } from './config/env.validation';
 import { buildPinoHttpOptions } from './logging/logger.config';
 
@@ -24,6 +26,19 @@ import { buildPinoHttpOptions } from './logging/logger.config';
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvVars, true>) => ({
         pinoHttp: buildPinoHttpOptions(config),
+      }),
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<EnvVars, true>) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: config.get('THROTTLE_TTL_MS', { infer: true }),
+            limit: config.get('THROTTLE_LIMIT', { infer: true }),
+          },
+        ],
+        skipIf: isThrottleExempt,
       }),
     }),
     MongooseModule.forRootAsync({
@@ -45,6 +60,9 @@ import { buildPinoHttpOptions } from './logging/logger.config';
     MetricsModule,
   ],
   controllers: [],
-  providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
+  ],
 })
 export class AppModule {}

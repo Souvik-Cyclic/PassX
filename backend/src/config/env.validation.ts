@@ -13,6 +13,7 @@ export interface EnvVars {
   LOG_LEVEL: LogLevel;
   CORS_ORIGINS: string;
   METRICS_PORT: number;
+  METRICS_HOST: string;
   OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   OTEL_SERVICE_NAME: string;
   APP_COMMIT: string;
@@ -23,7 +24,6 @@ export interface EnvVars {
   NODE_NAME: string;
   THROTTLE_TTL_MS: number;
   THROTTLE_LIMIT: number;
-  THROTTLE_AUTH_LIMIT: number;
   BREAK_READINESS: boolean;
 }
 
@@ -44,6 +44,8 @@ export const validationSchema: Joi.ObjectSchema<EnvVars> = Joi.object<EnvVars>({
     .default('info'),
   CORS_ORIGINS: Joi.string().allow('').default(''),
   METRICS_PORT: Joi.number().integer().min(0).max(65535).default(9464),
+  // 0.0.0.0 so Prometheus can scrape the pod IP; set 127.0.0.1 for local-only.
+  METRICS_HOST: Joi.string().hostname().default('0.0.0.0'),
   OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().allow('').optional(),
   OTEL_SERVICE_NAME: Joi.string().default('passx-backend'),
   APP_COMMIT: unknown,
@@ -54,6 +56,5 @@ export const validationSchema: Joi.ObjectSchema<EnvVars> = Joi.object<EnvVars>({
   NODE_NAME: unknown,
   THROTTLE_TTL_MS: Joi.number().integer().positive().default(60_000),
   THROTTLE_LIMIT: Joi.number().integer().positive().default(100),
-  THROTTLE_AUTH_LIMIT: Joi.number().integer().positive().default(10),
   BREAK_READINESS: Joi.boolean().default(false),
 });

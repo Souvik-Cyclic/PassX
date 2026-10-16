@@ -33,7 +33,13 @@ describe('MetricsService', () => {
   const checkMongo = jest.fn();
   const health = { checkMongo, isMongoUp: jest.fn() };
   const config = {
-    get: jest.fn((key: string) => (key === 'METRICS_PORT' ? 0 : undefined)),
+    get: jest.fn((key: string) =>
+      key === 'METRICS_PORT'
+        ? 0
+        : key === 'METRICS_HOST'
+          ? '127.0.0.1'
+          : undefined,
+    ),
   };
   let service: MetricsService;
 

@@ -125,10 +125,14 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
 
     return new Promise<void>((resolve, reject) => {
       server.once('error', reject);
-      server.listen(port, '0.0.0.0', () => {
-        server.off('error', reject);
-        resolve();
-      });
+      server.listen(
+        port,
+        this.config.get('METRICS_HOST', { infer: true }),
+        () => {
+          server.off('error', reject);
+          resolve();
+        },
+      );
     });
   }
 
