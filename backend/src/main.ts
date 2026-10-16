@@ -1,7 +1,8 @@
-import 'dotenv/config';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
+import { EnvVars } from './config/env.validation';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -28,11 +29,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(Number(process.env.PORT));
+  const port = app
+    .get(ConfigService<EnvVars, true>)
+    .get('PORT', { infer: true });
+  await app.listen(port);
 
-  console.log(`API is running on http://localhost:${process.env.PORT}`);
-  console.log(
-    `Swagger docs available at http://localhost:${process.env.PORT}/docs`,
-  );
+  console.log(`API is running on http://localhost:${port}`);
+  console.log(`Swagger docs available at http://localhost:${port}/docs`);
 }
 void bootstrap();
