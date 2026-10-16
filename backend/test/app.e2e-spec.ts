@@ -54,6 +54,32 @@ describe('PassX API (e2e)', () => {
     });
   });
 
+  describe('request ids', () => {
+    const UUID_V4 =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+    it('assigns a UUID request id when none is sent', async () => {
+      const res = await http.get('/health/live').expect(200);
+      expect(res.headers['x-request-id']).toMatch(UUID_V4);
+    });
+
+    it('echoes a well-formed incoming request id', async () => {
+      const res = await http
+        .get('/health/live')
+        .set('x-request-id', 'client-abc-123')
+        .expect(200);
+      expect(res.headers['x-request-id']).toBe('client-abc-123');
+    });
+
+    it('replaces a hostile request id', async () => {
+      const res = await http
+        .get('/health/live')
+        .set('x-request-id', 'x'.repeat(200))
+        .expect(200);
+      expect(res.headers['x-request-id']).toMatch(UUID_V4);
+    });
+  });
+
   describe('version', () => {
     it('GET /version reports build identity with safe defaults', async () => {
       const res = await http.get('/version').expect(200);

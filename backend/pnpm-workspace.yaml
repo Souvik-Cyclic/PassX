@@ -2,4 +2,5 @@ allowBuilds:
   '@parcel/watcher': false
   '@scarf/scarf': false
   mongodb-memory-server: false
+  protobufjs: false
   unrs-resolver: false

@@ -1,12 +1,14 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
 import { EnvVars } from './config/env.validation';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
   app.enableCors();
   configureApp(app);
 
@@ -34,7 +36,6 @@ async function bootstrap() {
     .get('PORT', { infer: true });
   await app.listen(port);
 
-  console.log(`API is running on http://localhost:${port}`);
-  console.log(`Swagger docs available at http://localhost:${port}/docs`);
+  app.get(Logger).log(`API listening on port ${port}, docs at /docs`);
 }
 void bootstrap();
