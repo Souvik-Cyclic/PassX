@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { VaultItem } from './schema/vault.schema';
 
 @Injectable()
@@ -22,6 +22,10 @@ export class VaultService {
   }
 
   async update(id: string, userId: string, encryptedData: string) {
+    if (!isValidObjectId(id)) {
+      throw new NotFoundException('Vault item not found');
+    }
+
     const item = await this.vaultModel.findOneAndUpdate(
       { _id: id, userId },
       { encryptedData },
@@ -36,6 +40,10 @@ export class VaultService {
   }
 
   async delete(id: string, userId: string) {
+    if (!isValidObjectId(id)) {
+      throw new NotFoundException('Vault item not found');
+    }
+
     const result = await this.vaultModel.findOneAndDelete({
       _id: id,
       userId,
