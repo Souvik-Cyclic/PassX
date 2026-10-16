@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { MetricsService } from '../src/metrics/metrics.service';
 
 describe('PassX API (e2e)', () => {
   let app: INestApplication;
@@ -232,6 +233,26 @@ describe('PassX API (e2e)', () => {
 
     it('returns 404 when deleting again', async () => {
       await http.delete(`/vault/${itemId}`).set(auth(aliceToken)).expect(404);
+    });
+  });
+
+  describe('metrics', () => {
+    it('serves Prometheus metrics on the separate metrics port', async () => {
+      const port = app.get(MetricsService).boundPort;
+      expect(port).toBeGreaterThan(0);
+
+      const res = await fetch(`http://127.0.0.1:${port}/metrics`);
+      const body = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(body).toMatch(/http_requests_total\{[^}]*route="\/vault"/);
+      expect(body).toMatch(/http_requests_total\{[^}]*status="404"/);
+      expect(body).toContain('mongo_up 1');
+      expect(body).not.toMatch(/route="\/health\/live"/);
+    });
+
+    it('does not serve metrics on the app port', async () => {
+      await http.get('/metrics').expect(404);
     });
   });
 });

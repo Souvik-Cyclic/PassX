@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
@@ -7,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { VaultModule } from './vault/vault.module';
 import { HealthModule } from './health/health.module';
 import { VersionModule } from './version/version.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import { EnvVars, validationSchema } from './config/env.validation';
 import { buildPinoHttpOptions } from './logging/logger.config';
 
@@ -39,8 +42,9 @@ import { buildPinoHttpOptions } from './logging/logger.config';
     VaultModule,
     HealthModule,
     VersionModule,
+    MetricsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })
 export class AppModule {}
