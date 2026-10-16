@@ -1,0 +1,22 @@
+# ingress-nginx on kind: bind the controller to the node's host ports so the
+# extraPortMappings in cluster.yaml reach it.
+controller:
+  hostPort:
+    enabled: true
+  service:
+    type: NodePort
+  nodeSelector:
+    ingress-ready: "true"
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Equal
+      effect: NoSchedule
+  watchIngressWithoutClass: true
+  metrics:
+    enabled: true
+  admissionWebhooks:
+    enabled: true
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
