@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { VaultModule } from './vault/vault.module';
 import { HealthModule } from './health/health.module';
+import { VersionModule } from './version/version.module';
 import { EnvVars, validationSchema } from './config/env.validation';
 
 @Module({
@@ -26,6 +27,7 @@ import { EnvVars, validationSchema } from './config/env.validation';
     UserModule,
     VaultModule,
     HealthModule,
+    VersionModule,
   ],
   controllers: [],
   providers: [],
