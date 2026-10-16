@@ -3,5 +3,16 @@ dist
 npm-debug.log
 pnpm-debug.log
 .git
+.git*
 .gitignore
 README.md
+*.md
+.env
+.env.*
+coverage
+test
+.superpowers
+.node-version
+Dockerfile
+.dockerignore
+scripts
