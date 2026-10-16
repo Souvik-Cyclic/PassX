@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { ConnectionStates, Connection } from 'mongoose';
 
 /** Upper bound for a single Mongo ping before it is reported as down. */
 export const MONGO_PING_TIMEOUT_MS = 1500;
@@ -23,7 +23,7 @@ export class HealthService {
   async checkMongo(): Promise<MongoCheckResult> {
     const startedAt = Date.now();
     const db = this.connection.db;
-    if (!db) {
+    if (!db || this.connection.readyState !== ConnectionStates.connected) {
       return this.record(false, startedAt);
     }
 

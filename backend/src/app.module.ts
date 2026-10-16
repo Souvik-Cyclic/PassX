@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import type { Connection } from 'mongoose';
 import { LoggerModule } from 'nestjs-pino';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -10,10 +11,10 @@ import { VaultModule } from './vault/vault.module';
 import { HealthModule } from './health/health.module';
 import { VersionModule } from './version/version.module';
 import { MetricsModule } from './metrics/metrics.module';
-import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import { isThrottleExempt } from './security/throttling';
 import { EnvVars, validationSchema } from './config/env.validation';
 import { buildPinoHttpOptions } from './logging/logger.config';
+import { attachMongoReconnect } from './config/mongo-reconnect';
 
 @Module({
   imports: [
@@ -43,14 +44,19 @@ import { buildPinoHttpOptions } from './logging/logger.config';
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService<EnvVars, true>) => ({
-        uri: config.get('MONGO_URI', { infer: true }),
-        dbName: config.get('MONGO_DB_NAME', { infer: true }),
-        serverSelectionTimeoutMS: 5000,
-        // Start serving (liveness, /version) before Mongo is reachable;
-        // readiness reports the real database state.
-        lazyConnection: true,
-      }),
+      useFactory: (config: ConfigService<EnvVars, true>) => {
+        const uri = config.get('MONGO_URI', { infer: true });
+        return {
+          uri,
+          dbName: config.get('MONGO_DB_NAME', { infer: true }),
+          serverSelectionTimeoutMS: 5000,
+          // Start serving (liveness, /version) before Mongo is reachable;
+          // readiness reports the real database state.
+          lazyConnection: true,
+          connectionFactory: (connection: Connection) =>
+            attachMongoReconnect(connection, uri),
+        };
+      },
     }),
     AuthModule,
     UserModule,
@@ -60,9 +66,6 @@ import { buildPinoHttpOptions } from './logging/logger.config';
     MetricsModule,
   ],
   controllers: [],
-  providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

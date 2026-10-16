@@ -4,7 +4,7 @@ import { HealthService } from './health.service';
 
 describe('HealthService', () => {
   const ping = jest.fn();
-  const connection = { db: { admin: () => ({ ping }) } };
+  const connection = { readyState: 1, db: { admin: () => ({ ping }) } };
   let service: HealthService;
 
   beforeEach(async () => {
