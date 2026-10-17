@@ -24,6 +24,9 @@ export function buildPinoHttpOptions(
     level: config.get('LOG_LEVEL', { infer: true }),
     transport:
       nodeEnv === 'development' ? { target: 'pino-pretty' } : undefined,
+    // String levels such as "info" instead of pino's numbers so Loki and
+    // Grafana can filter on them without a mapping.
+    formatters: { level: (label) => ({ level: label }) },
     redact: ['req.headers.authorization'],
     genReqId: (req, res) => {
       const id = resolveRequestId(req.headers[REQUEST_ID_HEADER]);
@@ -35,8 +38,8 @@ export function buildPinoHttpOptions(
       traceId: trace.getActiveSpan()?.spanContext().traceId,
     }),
     customLogLevel: (req, res, error) => {
-      if (QUIET_PATHS.has(pathOf(req))) return 'debug';
       if (error || res.statusCode >= 500) return 'error';
+      if (QUIET_PATHS.has(pathOf(req)) && res.statusCode < 400) return 'debug';
       if (res.statusCode >= 400) return 'warn';
       return 'info';
     },

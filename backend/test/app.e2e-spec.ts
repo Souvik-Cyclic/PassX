@@ -249,6 +249,12 @@ describe('PassX API (e2e)', () => {
       expect(body).toMatch(/http_requests_total\{[^}]*status="404"/);
       expect(body).toContain('mongo_up 1');
       expect(body).not.toMatch(/route="\/health\/live"/);
+      expect(body).toMatch(/http_requests_total\{[^}]*status="401"/);
+      await http.get('/definitely-not-a-route').expect(404);
+      const again = await (
+        await fetch(`http://127.0.0.1:${port}/metrics`)
+      ).text();
+      expect(again).toMatch(/route="unmatched"[^}]*status="404"/);
     });
 
     it('does not serve metrics on the app port', async () => {
@@ -294,6 +300,14 @@ describe('PassX API (e2e)', () => {
         statuses.push(res.status);
       }
       expect(statuses).toContain(429);
+    });
+
+    it('counts rate-limit rejections in metrics', async () => {
+      const port = app.get(MetricsService).boundPort;
+      const body = await (
+        await fetch(`http://127.0.0.1:${port}/metrics`)
+      ).text();
+      expect(body).toMatch(/http_requests_total\{[^}]*status="429"/);
     });
 
     it('never rate limits liveness probes', async () => {

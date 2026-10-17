@@ -6,6 +6,13 @@ describe('startTracing', () => {
     expect(startTracing({ OTEL_EXPORTER_OTLP_ENDPOINT: '' })).toBeUndefined();
   });
 
+  it('does not load the OpenTelemetry SDK when inert', () => {
+    const loaded = Object.keys(require.cache).some((k) =>
+      k.includes('@opentelemetry/sdk-node'),
+    );
+    expect(loaded).toBe(false);
+  });
+
   it('starts an SDK when an endpoint is configured and shuts down cleanly', async () => {
     const sdk = startTracing({
       OTEL_EXPORTER_OTLP_ENDPOINT: 'http://127.0.0.1:1',

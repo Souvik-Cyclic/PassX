@@ -49,6 +49,17 @@ describe('validationSchema', () => {
     expect(error?.message).toContain('"NODE_ENV"');
   });
 
+  it('requires a 32+ character JWT_SECRET in production', () => {
+    const { error } = validate({ ...minimal, NODE_ENV: 'production' });
+    expect(error?.message).toContain('"JWT_SECRET"');
+    const ok = validate({
+      ...minimal,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'x'.repeat(32),
+    });
+    expect(ok.error).toBeUndefined();
+  });
+
   it('coerces BREAK_READINESS from the string "true"', () => {
     const { value } = validate({ ...minimal, BREAK_READINESS: 'true' });
 

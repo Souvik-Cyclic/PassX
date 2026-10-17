@@ -39,7 +39,10 @@ export const validationSchema: Joi.ObjectSchema<EnvVars> = Joi.object<EnvVars>({
     .uri({ scheme: ['mongodb', 'mongodb+srv'] })
     .required(),
   MONGO_DB_NAME: Joi.string().default('passx'),
-  JWT_SECRET: Joi.string().min(1).required(),
+  JWT_SECRET: Joi.string()
+    .min(1)
+    .required()
+    .when('NODE_ENV', { is: 'production', then: Joi.string().min(32) }),
   LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')
     .default('info'),

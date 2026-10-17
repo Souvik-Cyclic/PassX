@@ -3,6 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { EnvVars } from './config/env.validation';
+import { MetricsMiddleware } from './metrics/metrics.middleware';
 import { buildCorsOptions } from './security/cors';
 
 /**
@@ -22,6 +23,11 @@ export function configureApp(app: INestApplication): INestApplication {
   // CSP is off because Swagger UI at /docs relies on inline scripts; every
   // other helmet header (nosniff, frameguard, HSTS, no x-powered-by) stays on.
   app.use(helmet({ contentSecurityPolicy: false }));
+
+  // Mounted on Express directly so every request, including unmatched 404s
+  // and guard rejections, lands in http_requests_total.
+  const metrics = app.get(MetricsMiddleware);
+  app.use(metrics.use.bind(metrics));
 
   const cors = buildCorsOptions(
     config.get('CORS_ORIGINS', { infer: true }),

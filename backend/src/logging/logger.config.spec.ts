@@ -47,10 +47,15 @@ describe('buildPinoHttpOptions', () => {
     expect(setHeader).toHaveBeenCalledWith('x-request-id', 'abc-1');
   });
 
-  it('logs health and metrics traffic at debug', () => {
+  it('logs healthy probe traffic at debug but failing probes at error', () => {
     expect(customLogLevel(req('/health/live'), res(200))).toBe('debug');
-    expect(customLogLevel(req('/health/ready'), res(503))).toBe('debug');
     expect(customLogLevel(req('/metrics'), res(200))).toBe('debug');
+    expect(customLogLevel(req('/health/ready'), res(503))).toBe('error');
+  });
+
+  it('emits string level labels', () => {
+    const fmt = options.formatters as { level: (l: string) => object };
+    expect(fmt.level('info')).toEqual({ level: 'info' });
   });
 
   it('maps status codes to levels', () => {
