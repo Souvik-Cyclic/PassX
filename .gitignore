@@ -1,0 +1,3 @@
+
+# Kubernetes secrets, generated locally by `make secrets`
+k8s/overlays/*/secrets.env
