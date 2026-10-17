@@ -4,6 +4,9 @@ SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
 ENV ?= dev
+ifeq (,$(filter $(ENV),dev prod))
+$(error ENV must be dev or prod, got '$(ENV)')
+endif
 IMAGE ?= ghcr.io/souvik-cyclic/passx-backend
 TAG ?= sha-$(shell git rev-parse --short HEAD)
 CLUSTER := passx
@@ -29,12 +32,12 @@ cluster-up: ## Create the kind cluster with Calico, metrics-server, ingress-ngin
 cluster-down: ## Delete the kind cluster
 	kind delete cluster --name $(CLUSTER)
 
-secrets: ## Generate k8s/overlays/$(ENV)/secrets.env if missing (never committed)
-	@f=k8s/overlays/$(ENV)/secrets.env; \
-	if [ -f $$f ]; then echo "$$f exists"; else \
-	  printf 'JWT_SECRET=%s\nMONGO_ROOT_USERNAME=passx\nMONGO_ROOT_PASSWORD=%s\n' \
-	    "$$(openssl rand -base64 48 | tr -d '\n=/+')" "$$(openssl rand -base64 24 | tr -d '\n=/+')" > $$f; \
-	  echo "wrote $$f"; fi
+secrets: ## Generate k8s/overlays/$(ENV)/{secrets,mongo}.env if missing (never committed)
+	@umask 077; d=k8s/overlays/$(ENV); \
+	if [ -f $$d/secrets.env ]; then echo "$$d/secrets.env exists"; else \
+	  printf 'JWT_SECRET=%s\n' "$$(openssl rand -base64 48 | tr -d '\n=/+')" > $$d/secrets.env; echo "wrote $$d/secrets.env"; fi; \
+	if [ -f $$d/mongo.env ]; then echo "$$d/mongo.env exists"; else \
+	  printf 'MONGO_ROOT_USERNAME=passx\nMONGO_ROOT_PASSWORD=%s\n' "$$(openssl rand -base64 24 | tr -d '\n=/+')" > $$d/mongo.env; echo "wrote $$d/mongo.env"; fi
 
 image: ## Build the backend image as $(IMAGE):$(TAG)
 	docker build \

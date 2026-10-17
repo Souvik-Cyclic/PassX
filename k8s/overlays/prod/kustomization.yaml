@@ -13,11 +13,16 @@ images:
   - name: ghcr.io/souvik-cyclic/passx-backend
     newTag: dev
 
+# See overlays/dev/kustomization.yaml for why Mongo credentials are separate.
 secretGenerator:
   - name: backend-secrets
     envs:
       - secrets.env
+  - name: mongo-secrets
+    envs:
+      - mongo.env
+    options:
+      disableNameSuffixHash: true
 
 patches:
   - path: patches/ingress-host.yaml
-  - path: patches/replicas.yaml

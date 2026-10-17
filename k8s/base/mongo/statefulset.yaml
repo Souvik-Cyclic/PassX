@@ -25,7 +25,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: mongo
-          image: mongo:7
+          # Pinned by digest (mongo:7 at the time of writing); mutable tags are
+          # never deployed.
+          image: mongo:7@sha256:b6421fd6d1c5ded6377b397d8983e2f82e2100dc5123332dcfda2065a472be5b
           ports:
             - name: mongo
               containerPort: 27017
@@ -33,12 +35,12 @@ spec:
             - name: MONGO_INITDB_ROOT_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: backend-secrets
+                  name: mongo-secrets
                   key: MONGO_ROOT_USERNAME
             - name: MONGO_INITDB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: backend-secrets
+                  name: mongo-secrets
                   key: MONGO_ROOT_PASSWORD
           readinessProbe:
             exec:

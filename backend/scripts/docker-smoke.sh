@@ -28,9 +28,9 @@ MONGO_CONTAINER=""
 CONTAINER=""
 
 cleanup() {
-  [[ -n "$CONTAINER" ]] && docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-  [[ -n "$MONGO_CONTAINER" ]] && docker rm -f "$MONGO_CONTAINER" >/dev/null 2>&1 || true
-  [[ -n "$NETWORK" ]] && docker network rm "$NETWORK" >/dev/null 2>&1 || true
+  if [[ -n "$CONTAINER" ]]; then docker rm -f "$CONTAINER" >/dev/null 2>&1 || true; fi
+  if [[ -n "$MONGO_CONTAINER" ]]; then docker rm -f "$MONGO_CONTAINER" >/dev/null 2>&1 || true; fi
+  if [[ -n "$NETWORK" ]]; then docker network rm "$NETWORK" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
 

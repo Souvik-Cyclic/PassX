@@ -12,8 +12,12 @@ resources:
   - mongo/service.yaml
   - mongo/networkpolicy.yaml
   - backend/serviceaccount.yaml
-  - backend/configmap.yaml
   - backend/deployment.yaml
   - backend/service.yaml
   - backend/ingress.yaml
   - backend/networkpolicy.yaml
+
+configMapGenerator:
+  - name: backend-config
+    envs:
+      - backend/config.env

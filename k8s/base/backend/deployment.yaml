@@ -5,7 +5,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 1
+  # replicas intentionally unset: dev patches 1, prod's HPA owns it (min 2).
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
@@ -55,6 +55,8 @@ spec:
                 name: backend-config
             - secretRef:
                 name: backend-secrets
+            - secretRef:
+                name: mongo-secrets
           env:
             - name: MONGO_URI
               value: mongodb://$(MONGO_ROOT_USERNAME):$(MONGO_ROOT_PASSWORD)@mongo:27017/passx?authSource=admin
