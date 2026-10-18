@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # Label given to the laptop runner that hosts the kind cluster.
+  labels:
+    - passx
