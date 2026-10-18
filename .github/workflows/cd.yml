@@ -54,6 +54,7 @@ jobs:
           docker pull "$IMAGE:${{ steps.tag.outputs.tag }}"
           kind load docker-image "$IMAGE:${{ steps.tag.outputs.tag }}" --name passx
       - name: Deploy and wait for rollout
+        id: deploy
         run: scripts/deploy.sh dev "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
         # Five matches in a row: old pods answer briefly after rollout (preStop, endpoints).
@@ -72,7 +73,8 @@ jobs:
       - name: Smoke test the user journey
         run: scripts/smoke.sh http://dev.passx.127.0.0.1.nip.io
       - name: Roll back on failure
-        if: failure()
+        # Only after a deploy was attempted; a failure before it (checkout, pull) must not undo the previous release.
+        if: failure() && steps.deploy.outcome != 'skipped'
         run: |
           kubectl -n passx-dev rollout undo deploy/backend
           kubectl -n passx-dev rollout status deploy/backend --timeout=180s
@@ -121,6 +123,7 @@ jobs:
           docker pull "$IMAGE:${{ steps.tag.outputs.tag }}"
           kind load docker-image "$IMAGE:${{ steps.tag.outputs.tag }}" --name passx
       - name: Deploy and wait for rollout
+        id: deploy
         run: scripts/deploy.sh prod "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
         # Five matches in a row: old pods answer briefly after rollout (preStop, endpoints).
@@ -141,7 +144,8 @@ jobs:
       - name: Drift check against the rendered overlay
         run: scripts/drift-check.sh prod "${{ steps.tag.outputs.tag }}"
       - name: Roll back on failure
-        if: failure()
+        # Only after a deploy was attempted; a failure before it (checkout, pull) must not undo the previous release.
+        if: failure() && steps.deploy.outcome != 'skipped'
         run: |
           kubectl -n passx-prod rollout undo deploy/backend
           kubectl -n passx-prod rollout status deploy/backend --timeout=180s
