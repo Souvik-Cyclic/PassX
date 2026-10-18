@@ -26,10 +26,11 @@ case "$ENV_NAME" in
 esac
 
 if [[ -n "$HOST" ]]; then
-  # Old pods keep serving until endpoints update; wait until the Ingress
-  # answers with the tag we just deployed.
-  "$ROOT/scripts/wait-for.sh" "ingress serving $TAG on $HOST" 90 \
-    sh -c "curl -s http://$HOST/version | grep -q '\"imageTag\":\"$TAG\"'"
+  # Old pods keep serving until the Ingress drops them (preStop sleep plus
+  # endpoint propagation). Require five consecutive answers with the new tag
+  # so a single lucky hit on the new pod cannot pass the check.
+  "$ROOT/scripts/wait-for.sh" "ingress consistently serving $TAG on $HOST" 120 \
+    sh -c "for i in 1 2 3 4 5; do curl -s --max-time 5 http://$HOST/version | grep -q '\"imageTag\":\"$TAG\"' || exit 1; sleep 1; done"
   echo "running version:"
   curl -s "http://$HOST/version"; echo
 fi

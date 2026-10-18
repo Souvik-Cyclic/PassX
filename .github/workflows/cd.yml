@@ -64,9 +64,20 @@ jobs:
       - name: Deploy and wait for rollout
         run: scripts/deploy.sh dev "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
+        # Five consecutive matches: old pods can still answer for a few seconds
+        # after the rollout completes (preStop + endpoint propagation).
         run: |
-          running=$(curl -s http://dev.passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])')
-          test "$running" = "$DEPLOY_SHA" && echo "running commit $running"
+          for attempt in $(seq 1 30); do
+            ok=0
+            for _ in 1 2 3 4 5; do
+              running=$(curl -s --max-time 5 http://dev.passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])' || true)
+              [ "$running" = "$DEPLOY_SHA" ] && ok=$((ok+1))
+              sleep 1
+            done
+            if [ "$ok" -eq 5 ]; then echo "running commit $running (5/5 consistent)"; exit 0; fi
+            echo "attempt $attempt: $ok/5 answers matched, waiting"
+          done
+          echo "::error::running version never settled on $DEPLOY_SHA"; exit 1
       - name: Smoke test the user journey
         run: scripts/smoke.sh http://dev.passx.127.0.0.1.nip.io
       - name: Roll back on failure
@@ -122,9 +133,20 @@ jobs:
       - name: Deploy and wait for rollout
         run: scripts/deploy.sh prod "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
+        # Five consecutive matches: old pods can still answer for a few seconds
+        # after the rollout completes (preStop + endpoint propagation).
         run: |
-          running=$(curl -s http://passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])')
-          test "$running" = "$DEPLOY_SHA" && echo "running commit $running"
+          for attempt in $(seq 1 30); do
+            ok=0
+            for _ in 1 2 3 4 5; do
+              running=$(curl -s --max-time 5 http://passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])' || true)
+              [ "$running" = "$DEPLOY_SHA" ] && ok=$((ok+1))
+              sleep 1
+            done
+            if [ "$ok" -eq 5 ]; then echo "running commit $running (5/5 consistent)"; exit 0; fi
+            echo "attempt $attempt: $ok/5 answers matched, waiting"
+          done
+          echo "::error::running version never settled on $DEPLOY_SHA"; exit 1
       - name: Smoke test the user journey
         run: scripts/smoke.sh http://passx.127.0.0.1.nip.io
       - name: Drift check against the rendered overlay
