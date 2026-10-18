@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Creates (or reuses) the kind cluster "passx" and installs the add-ons the
-# project depends on: Calico (NetworkPolicy enforcement), metrics-server (HPA)
-# and ingress-nginx (host ports 80/443). Idempotent: safe to re-run.
+# Creates or reuses kind cluster "passx" with Calico, metrics-server and ingress-nginx.
+# Idempotent: safe to re-run.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,8 +27,7 @@ helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/ >
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx >/dev/null 2>&1 || true
 helm repo update >/dev/null
 # helm_ensure <release> <namespace> <chart-version> <helm args...>
-# Skips the upgrade when the release is already deployed at the pinned chart
-# version, so re-runs do not re-download charts.
+# Skips the upgrade when that chart version is already deployed.
 helm_ensure() {
   local release="$1" ns="$2" version="$3"; shift 3
   if helm list -n "$ns" -o json 2>/dev/null | grep -q "\"name\":\"$release\".*\"chart\":\"$release-$version\""; then

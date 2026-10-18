@@ -1,5 +1,4 @@
 # SLO: 99% of requests succeed (status < 500) and p95 latency stays under 300 ms.
-# Recording rules keep dashboards cheap; alerts turn the SLO into actions.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -14,8 +13,7 @@ spec:
         - record: passx:http_requests:rate5m
           expr: sum by (namespace) (rate(http_requests_total[5m]))
         - record: passx:http_errors:rate5m
-          # "or ... * 0" keeps a zero series per namespace when no 5xx has ever
-          # been recorded, so the ratio and the alert still evaluate.
+          # "or ... * 0" yields a zero series before any 5xx, so the alert still evaluates.
           expr: sum by (namespace) (rate(http_requests_total{status=~"5.."}[5m])) or (sum by (namespace) (rate(http_requests_total[5m])) * 0)
         - record: passx:http_error_ratio:5m
           expr: passx:http_errors:rate5m / passx:http_requests:rate5m

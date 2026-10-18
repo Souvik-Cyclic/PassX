@@ -1,5 +1,4 @@
-# ingress-nginx on kind: bind the controller to the node's host ports so the
-# extraPortMappings in cluster.yaml reach it.
+# Bind ingress-nginx to the node's host ports so cluster.yaml extraPortMappings reach it.
 controller:
   hostPort:
     enabled: true

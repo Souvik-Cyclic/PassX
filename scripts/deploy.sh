@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Usage: scripts/deploy.sh <dev|prod> <image-tag>
-# Renders the overlay with the given image tag, applies it, waits for the
-# rollout, and prints the running version. Leaves the repo clean: the tag is
-# set in a temporary copy of the overlay, never in the committed files.
+# Applies the overlay at that tag (set in a temp copy, never in git) and waits for rollout.
 set -euo pipefail
 
 ENV_NAME="${1:?usage: deploy.sh <dev|prod> <tag>}"
@@ -26,9 +24,8 @@ case "$ENV_NAME" in
 esac
 
 if [[ -n "$HOST" ]]; then
-  # Old pods keep serving until the Ingress drops them (preStop sleep plus
-  # endpoint propagation). Require five consecutive answers with the new tag
-  # so a single lucky hit on the new pod cannot pass the check.
+  # Old pods serve briefly after rollout (preStop, endpoint propagation).
+  # Five new-tag answers in a row rule out one lucky hit.
   "$ROOT/scripts/wait-for.sh" "ingress consistently serving $TAG on $HOST" 120 \
     sh -c "for i in 1 2 3 4 5; do curl -s --max-time 5 http://$HOST/version | grep -q '\"imageTag\":\"$TAG\"' || exit 1; sleep 1; done"
   echo "running version:"

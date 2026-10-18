@@ -1,9 +1,5 @@
-# Loki and Jaeger have no authentication of their own, so NetworkPolicy is
-# what keeps them from being a cluster-wide write/read surface:
-#   Loki   3100  <- Promtail (push) and Grafana (query) only
-#   Jaeger 4317/4318 <- backend namespaces (OTLP), 16686 <- Grafana only
-# kubectl port-forward still works: it enters from the node, which Calico
-# allows (same path as kubelet probes).
+# Loki and Jaeger have no auth: Loki 3100 from Promtail/Grafana only; Jaeger OTLP
+# 4317/4318 from backend namespaces, UI 16686 from Grafana. port-forward still works.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

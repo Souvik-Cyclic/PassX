@@ -6,26 +6,20 @@ import type { EnvVars } from './config/env.validation';
 import { MetricsMiddleware } from './metrics/metrics.middleware';
 import { buildCorsOptions } from './security/cors';
 
-/**
- * Applies every cross-cutting setting the HTTP app needs. Shared by main.ts and
- * the e2e harness so tests exercise the same pipeline production runs.
- */
+/** Shared HTTP setup for main.ts and e2e tests, so tests run the prod pipeline. */
 export function configureApp(app: INestApplication): INestApplication {
   const config = app.get(ConfigService<EnvVars, true>);
 
-  // req.ip (used for rate-limit keys and logs) honours X-Forwarded-For only
-  // from this many trusted hops; 0 means never trust the header.
+  // Proxy hops trusted for X-Forwarded-For in req.ip; 0 never trusts it.
   (app as NestExpressApplication).set(
     'trust proxy',
     config.get('TRUST_PROXY', { infer: true }),
   );
 
-  // CSP is off because Swagger UI at /docs relies on inline scripts; every
-  // other helmet header (nosniff, frameguard, HSTS, no x-powered-by) stays on.
+  // CSP off: Swagger UI at /docs needs inline scripts. Other helmet headers stay on.
   app.use(helmet({ contentSecurityPolicy: false }));
 
-  // Mounted on Express directly so every request, including unmatched 404s
-  // and guard rejections, lands in http_requests_total.
+  // On raw Express so 404s and guard rejections also reach http_requests_total.
   const metrics = app.get(MetricsMiddleware);
   app.use(metrics.use.bind(metrics));
 

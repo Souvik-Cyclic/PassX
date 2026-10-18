@@ -5,10 +5,8 @@ export const isNoiseRequest = (url: string | undefined): boolean =>
   /^\/(health(\/|\?|$)|metrics(\?|$))/.test(url ?? '');
 
 /**
- * Starts OpenTelemetry tracing when OTEL_EXPORTER_OTLP_ENDPOINT is set.
- * Must run before any other module is imported so auto-instrumentation can
- * patch http, express, and mongoose. Returns undefined without loading the
- * OpenTelemetry packages when tracing is not configured, which keeps tests fast and offline.
+ * Starts OpenTelemetry when OTEL_EXPORTER_OTLP_ENDPOINT is set; otherwise loads nothing.
+ * Must run before other imports so http, express and mongoose get patched.
  */
 export function startTracing(
   env: NodeJS.ProcessEnv = process.env,
@@ -18,8 +16,7 @@ export function startTracing(
     return undefined;
   }
 
-  // Loaded lazily: the OpenTelemetry packages cost ~50 MB RSS and ~0.5 s at
-  // startup, which pods without tracing should not pay.
+  // Lazy load: OpenTelemetry costs ~50 MB RSS and ~0.5 s at startup.
   /* eslint-disable @typescript-eslint/no-require-imports */
   const { NodeSDK } =
     require('@opentelemetry/sdk-node') as typeof import('@opentelemetry/sdk-node');

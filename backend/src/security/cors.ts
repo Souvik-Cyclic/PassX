@@ -1,11 +1,8 @@
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 /**
- * Translates the CORS_ORIGINS setting into Nest CORS options.
- *
- * - empty            → false (CORS disabled, no headers emitted)
- * - "*"              → allow any origin, development only
- * - "a.com, b.com"   → explicit allowlist
+ * Maps CORS_ORIGINS to Nest CORS options: empty disables CORS, "*" allows any
+ * origin (development only), "a.com, b.com" is an allowlist.
  */
 export function buildCorsOptions(
   origins: string,

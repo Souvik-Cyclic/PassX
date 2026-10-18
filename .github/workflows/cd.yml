@@ -1,16 +1,9 @@
-# PassX CD: deploys the image that ci.yml just published. Runs on the
-# self-hosted runner (the laptop that hosts the kind cluster), so it can reach
-# the cluster that GitHub-hosted runners cannot.
-#
-#   ci.yml build ──▶ deploy-dev (automatic) ──▶ deploy-prod (manual approval)
-#
-# Each job renders the overlay with the exact SHA tag, applies it, waits for
-# the rollout, asserts /version reports the commit, runs the user-journey
-# smoke test, and rolls back automatically if any of that fails.
+# PassX CD on the self-hosted kind runner: dev deploys automatically, prod after approval.
+# Each job deploys the SHA tag, checks /version, runs smoke tests and rolls back on failure.
 name: cd
 
 on:
-  # Called by ci.yml after a successful build on a push to this repository.
+  # Called by ci.yml after a successful push build.
   workflow_call:
     inputs:
       sha:
@@ -23,7 +16,7 @@ on:
         description: Full commit SHA to deploy (image sha-<7> must exist in GHCR)
         required: true
 
-# One deploy at a time per branch; a newer one waits rather than interleaving.
+# One deploy per branch at a time; newer runs wait.
 concurrency:
   group: cd-${{ github.ref_name }}
   cancel-in-progress: false
@@ -39,8 +32,7 @@ env:
 jobs:
   deploy-dev:
     name: deploy dev (automatic)
-    # Reached only from ci.yml on push events (never pull_request) or by a
-    # manual dispatch; both originate from this repository.
+    # Reached only from ci.yml push events or manual dispatch, never from PRs.
     runs-on: [self-hosted, passx]
     environment:
       name: development
@@ -64,8 +56,7 @@ jobs:
       - name: Deploy and wait for rollout
         run: scripts/deploy.sh dev "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
-        # Five consecutive matches: old pods can still answer for a few seconds
-        # after the rollout completes (preStop + endpoint propagation).
+        # Five matches in a row: old pods answer briefly after rollout (preStop, endpoints).
         run: |
           for attempt in $(seq 1 30); do
             ok=0
@@ -103,8 +94,7 @@ jobs:
     name: deploy prod (requires approval)
     needs: deploy-dev
     runs-on: [self-hosted, passx]
-    # The "production" Environment has a required reviewer; the job pauses
-    # here until a human approves it in the Actions UI.
+    # The "production" Environment needs a reviewer; the job waits for approval.
     environment:
       name: production
       url: http://passx.127.0.0.1.nip.io/version
@@ -133,8 +123,7 @@ jobs:
       - name: Deploy and wait for rollout
         run: scripts/deploy.sh prod "${{ steps.tag.outputs.tag }}"
       - name: Assert the running version is this commit
-        # Five consecutive matches: old pods can still answer for a few seconds
-        # after the rollout completes (preStop + endpoint propagation).
+        # Five matches in a row: old pods answer briefly after rollout (preStop, endpoints).
         run: |
           for attempt in $(seq 1 30); do
             ok=0

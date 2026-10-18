@@ -24,8 +24,7 @@ export function buildPinoHttpOptions(
     level: config.get('LOG_LEVEL', { infer: true }),
     transport:
       nodeEnv === 'development' ? { target: 'pino-pretty' } : undefined,
-    // String levels such as "info" instead of pino's numbers so Loki and
-    // Grafana can filter on them without a mapping.
+    // String levels ("info") so Loki and Grafana can filter without a mapping.
     formatters: { level: (label) => ({ level: label }) },
     redact: ['req.headers.authorization'],
     genReqId: (req, res) => {

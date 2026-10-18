@@ -11,11 +11,8 @@ images:
   - name: ghcr.io/souvik-cyclic/passx-backend
     newTag: dev
 
-# Both env files are gitignored; `make secrets ENV=dev` generates them.
-# backend-secrets is hash-suffixed so rotating JWT_SECRET rolls the backend.
-# mongo-secrets keeps a fixed name: MONGO_INITDB_ROOT_* only apply on first
-# init, so rotating them needs db.changeUserPassword (see k8s/README.md) and
-# must never restart Mongo by accident.
+# Env files are gitignored (`make secrets ENV=dev`); backend-secrets is hash-suffixed.
+# mongo-secrets name is fixed: MONGO_INITDB_ROOT_* only apply on first init (k8s/README.md).
 secretGenerator:
   - name: backend-secrets
     envs:

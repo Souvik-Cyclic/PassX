@@ -1,8 +1,5 @@
-# PassX backend CI: every push and PR is linted, tested, scanned, built and
-# (on push) published to GHCR tagged by commit SHA. Deploy jobs live in cd.yml
-# and run on the self-hosted runner after the build job succeeds.
-# Third-party actions are pinned to commit SHAs (supply chain); Dependabot
-# (.github/dependabot.yml) proposes the bumps.
+# PassX backend CI: lint, test, scan and build every push and PR; pushes publish to GHCR.
+# Actions are pinned to commit SHAs (Dependabot bumps them). Deploys live in cd.yml.
 name: ci
 
 on:
@@ -13,8 +10,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# A newer push to the same ref cancels the older run, so the deploy job can
-# never ship an outdated commit after a newer one.
+# A newer push cancels the older run, so an outdated commit never deploys.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -24,10 +20,9 @@ permissions:
 
 env:
   IMAGE: ghcr.io/souvik-cyclic/passx-backend
-  # Same mongod the e2e suite uses locally; cached between runs.
+  # Same mongod as local e2e; cached between runs.
   MONGOMS_VERSION: "8.2.6"
-  # On pull_request github.sha is a synthetic merge commit; tag and label the
-  # image with the real head commit so /version matches git log.
+  # On PRs github.sha is a synthetic merge commit; use the real head SHA instead.
   BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 defaults:
@@ -104,8 +99,7 @@ jobs:
           curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.8.3/kustomize_v5.8.3_linux_amd64.tar.gz" | tar xz kustomize
           curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
           sudo install -m 0755 kustomize kubeconform /usr/local/bin/
-      # No cluster on this runner: render each overlay with placeholder secrets
-      # and validate every object against the Kubernetes 1.37 schemas offline.
+      # No cluster here: validate rendered overlays against Kubernetes 1.37 schemas offline.
       - name: Render both overlays with placeholder secrets and validate schemas
         run: |
           for env in dev prod; do

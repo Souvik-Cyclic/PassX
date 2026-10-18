@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
-# Smoke-test a built passx-backend image.
-#
 # Usage: scripts/docker-smoke.sh IMAGE [EXPECTED_COMMIT]
-#
-# The app blocks bootstrap until Mongoose connects, so a throwaway Mongo
-# container (MONGO_IMAGE, default mongo:7) is started on a private network
-# unless MONGO_URI is already set in the environment. Then the script waits for
-# HEALTH_PATH to answer 200, checks the container runs as the "node" user and,
-# when EXPECTED_COMMIT is given, that GET /version reports that commit.
-# Exits 0 on success, 1 otherwise. All containers and the network are removed.
+# Starts MONGO_IMAGE (default mongo:7) unless MONGO_URI is set, then checks
+# HEALTH_PATH, the "node" user and /version. Cleans up everything it starts.
 set -euo pipefail
 
 IMAGE="${1:-}"
@@ -84,7 +77,7 @@ USER_IN_CONTAINER="$(docker inspect --format '{{.Config.User}}' "$CONTAINER")"
 [[ "$USER_IN_CONTAINER" == "node" ]] || fail "container user is '${USER_IN_CONTAINER}', expected 'node'"
 echo "user=node"
 
-# Only enforced when an expected commit is passed (CI passes the APP_COMMIT build arg).
+# Only when EXPECTED_COMMIT is given (CI passes the APP_COMMIT build arg).
 if [[ -n "$EXPECTED_COMMIT" ]]; then
   body="$(curl -sf "${BASE_URL}/version")" || fail "GET /version failed"
   if command -v jq >/dev/null 2>&1; then

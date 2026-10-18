@@ -25,9 +25,7 @@ WORKDIR /app
 
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Production deps only. pnpm is installed, used and removed inside one layer so
-# neither pnpm itself, its content-addressable store nor the npm cache ship in
-# the final image; node_modules is the only thing this layer keeps.
+# Prod deps only; pnpm, its store and the npm cache are removed in this same layer.
 RUN npm install -g pnpm@12.4.1 && \
     pnpm install --prod --frozen-lockfile && \
     rm -rf "$(pnpm store path)" && \

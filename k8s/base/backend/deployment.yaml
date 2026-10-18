@@ -22,8 +22,7 @@ spec:
     spec:
       serviceAccountName: backend
       automountServiceAccountToken: false
-      # Service env injection would turn METRICS_PORT into "tcp://..." if a
-      # Service named metrics ever appeared; config validation would reject it.
+      # Off so a Service named metrics can never inject METRICS_PORT="tcp://...".
       enableServiceLinks: false
       terminationGracePeriodSeconds: 30
       securityContext:

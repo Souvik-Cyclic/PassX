@@ -8,11 +8,8 @@ export interface ReconnectLogger {
 }
 
 /**
- * Makes a lazily-opened Mongoose connection survive Mongo being unavailable
- * at boot. Without this, the first failed connect emits an unhandled 'error'
- * and the process exits. While the connection has never been established we
- * retry openUri every `delayMs`; once connected, the driver's own topology
- * monitoring handles later reconnects.
+ * Retries openUri every `delayMs` until the first connect, so Mongo being down
+ * at boot cannot crash the process. Later reconnects are left to the driver.
  */
 export function attachMongoReconnect(
   connection: Connection,

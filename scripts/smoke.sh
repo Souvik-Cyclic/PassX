@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Usage: scripts/smoke.sh <base-url>
-# Walks the real user journey: readiness, version, signup, login, vault
-# create/list/update/delete, auth rejection. Exits 1 on the first mismatch.
+# Runs the user journey (readiness, version, auth, vault CRUD); exits 1 on first mismatch.
 set -euo pipefail
 
 BASE="${1:?usage: smoke.sh http://host}"

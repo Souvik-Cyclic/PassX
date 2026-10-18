@@ -24,10 +24,7 @@ export const MONGO_GAUGE_INTERVAL_MS = 10_000;
 
 export type HttpLabel = 'method' | 'route' | 'status';
 
-/**
- * Owns the Prometheus registry and serves it on a dedicated port
- * (`METRICS_PORT`) so the scrape endpoint never shares the app listener.
- */
+/** Owns the Prometheus registry and serves it on its own port (`METRICS_PORT`). */
 @Injectable()
 export class MetricsService implements OnModuleInit, OnModuleDestroy {
   readonly registry = new Registry();

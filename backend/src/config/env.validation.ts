@@ -60,8 +60,7 @@ export const validationSchema: Joi.ObjectSchema<EnvVars> = Joi.object<EnvVars>({
   NODE_NAME: unknown,
   THROTTLE_TTL_MS: Joi.number().integer().positive().default(60_000),
   THROTTLE_LIMIT: Joi.number().integer().positive().default(100),
-  // Number of reverse-proxy hops whose X-Forwarded-For is trusted for req.ip.
-  // 0 locally; 1 behind ingress-nginx so rate limits key on the real client.
+  // Trusted proxy hops for req.ip: 0 locally, 1 behind ingress-nginx.
   TRUST_PROXY: Joi.number().integer().min(0).default(0),
   BREAK_READINESS: Joi.boolean().default(false),
 });

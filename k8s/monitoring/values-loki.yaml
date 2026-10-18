@@ -1,5 +1,4 @@
-# Loki in single-binary mode with local filesystem storage: right-sized for one
-# node and two days of logs.
+# Single-binary Loki on local disk, sized for one node and two days of logs.
 deploymentMode: SingleBinary
 
 loki:

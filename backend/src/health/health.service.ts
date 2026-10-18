@@ -16,10 +16,7 @@ export class HealthService {
 
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
-  /**
-   * Pings Mongo via the driver admin command, raced against a timeout so the
-   * readiness probe never hangs on server selection.
-   */
+  /** Pings Mongo with a timeout so readiness never hangs on server selection. */
   async checkMongo(): Promise<MongoCheckResult> {
     const startedAt = Date.now();
     const db = this.connection.db;

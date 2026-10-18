@@ -50,8 +50,7 @@ import { attachMongoReconnect } from './config/mongo-reconnect';
           uri,
           dbName: config.get('MONGO_DB_NAME', { infer: true }),
           serverSelectionTimeoutMS: 5000,
-          // Start serving (liveness, /version) before Mongo is reachable;
-          // readiness reports the real database state.
+          // Serve liveness and /version before Mongo is up; readiness shows DB state.
           lazyConnection: true,
           connectionFactory: (connection: Connection) =>
             attachMongoReconnect(connection, uri),

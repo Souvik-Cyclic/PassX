@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Usage: scripts/render.sh <dev|prod> <image-tag>  → rendered manifests on stdout
-# Copies the overlay to a temp dir (so `kustomize edit` never dirties git),
-# points it at the requested tag, and builds it.
+# Builds a temp copy of the overlay so `kustomize edit` never dirties git.
 set -euo pipefail
 
 ENV_NAME="${1:?}"; TAG="${2:?}"

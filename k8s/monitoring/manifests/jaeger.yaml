@@ -1,5 +1,4 @@
-# Jaeger all-in-one: OTLP receiver + in-memory storage + UI. Enough for a demo
-# cluster; production would use the Jaeger v2 chart with a real store.
+# Jaeger all-in-one (OTLP, in-memory store, UI); fine for a demo cluster.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,8 +27,7 @@ spec:
           env:
             - name: COLLECTOR_OTLP_ENABLED
               value: "true"
-            # In-memory store; 5000 traces stays well inside the memory limit
-            # (20000 was OOMKilled at 512Mi during testing).
+            # 5000 traces fits the memory limit; 20000 was OOMKilled at 512Mi.
             - name: MEMORY_MAX_TRACES
               value: "5000"
           ports:

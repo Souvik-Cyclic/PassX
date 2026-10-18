@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Installs the observability stack into namespace "monitoring":
-# kube-prometheus-stack (Prometheus, Alertmanager, Grafana), Loki + Promtail,
-# Jaeger all-in-one, plus the PassX ServiceMonitor, SLO rules and dashboard.
+# Installs Prometheus, Grafana, Loki, Promtail, Jaeger and PassX rules into "monitoring".
 # Idempotent; chart versions are pinned below.
 set -euo pipefail
 

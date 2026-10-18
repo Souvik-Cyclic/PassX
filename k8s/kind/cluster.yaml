@@ -1,7 +1,5 @@
-# Local kind cluster for PassX.
-# - Default CNI disabled so Calico can enforce NetworkPolicy.
-# - Ports 80/443 mapped to the host so ingress-nginx is reachable at
-#   http://*.127.0.0.1.nip.io without editing /etc/hosts.
+# Local kind cluster for PassX. Default CNI is off so Calico can enforce NetworkPolicy.
+# Host ports 80/443 make ingress-nginx reachable at http://*.127.0.0.1.nip.io.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: passx

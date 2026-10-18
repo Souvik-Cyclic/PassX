@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # Usage: scripts/netpol-test.sh <dev|prod>
-# Proves the Mongo NetworkPolicy is enforced:
-#   1. a throwaway pod with no app label must NOT reach mongo:27017
-#   2. the real backend pod (the only allowed client) must reach it
-# Each case prints a marker from inside the pod and asserts on it, so an API
-# error, image pull failure or PSA rejection can never read as a pass.
+# Proves only backend pods reach mongo:27017. In-pod markers stop errors passing.
 set -euo pipefail
 
 ENV_NAME="${1:?usage: netpol-test.sh <dev|prod>}"

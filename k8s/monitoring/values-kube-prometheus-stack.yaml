@@ -1,8 +1,7 @@
 # kube-prometheus-stack tuned for a single-node kind cluster.
 fullnameOverride: kps
 
-# Control-plane components kind does not expose; scraping them only produces
-# noise alerts.
+# kind does not expose these control-plane parts; scraping them only causes noise alerts.
 kubeEtcd:
   enabled: false
 kubeScheduler:
@@ -21,8 +20,7 @@ defaultRules:
 prometheus:
   prometheusSpec:
     retention: 2d
-    # Pick up ServiceMonitors/PrometheusRules from any namespace, not only
-    # those carrying the Helm release label.
+    # Select ServiceMonitors/PrometheusRules in any namespace, without the release label.
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -43,8 +41,7 @@ alertmanager:
         memory: 64Mi
 
 grafana:
-  # adminPassword is passed on the command line from the gitignored
-  # k8s/monitoring/grafana.env; never put it here.
+  # adminPassword comes from gitignored k8s/monitoring/grafana.env; never set it here.
   defaultDashboardsEnabled: true
   sidecar:
     dashboards:

@@ -1,5 +1,4 @@
-# Backend accepts HTTP only from the ingress controller and metrics scrapes
-# only from the monitoring namespace.
+# HTTP only from the ingress controller; metrics only from the monitoring namespace.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
