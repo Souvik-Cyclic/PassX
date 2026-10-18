@@ -1,6 +1,6 @@
 # PassX backend CI: every push and PR is linted, tested, scanned, built and
 # (on push) published to GHCR tagged by commit SHA. Deploy jobs live in cd.yml
-# and run on the self-hosted runner after this workflow succeeds.
+# and run on the self-hosted runner after the build job succeeds.
 # Third-party actions are pinned to commit SHAs (supply chain); Dependabot
 # (.github/dependabot.yml) proposes the bumps.
 name: ci
@@ -216,3 +216,16 @@ jobs:
             echo "- commit \`${BUILD_SHA}\`"
             echo "- run ${{ steps.meta.outputs.run_url }}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: deploy
+    needs: build
+    # Only pushes (never pull_request builds) reach the self-hosted runner.
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/cd.yml
+    with:
+      sha: ${{ github.sha }}
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: read

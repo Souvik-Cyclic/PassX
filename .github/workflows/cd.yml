@@ -2,7 +2,7 @@
 # self-hosted runner (the laptop that hosts the kind cluster), so it can reach
 # the cluster that GitHub-hosted runners cannot.
 #
-#   ci.yml success ──▶ deploy-dev (automatic) ──▶ deploy-prod (manual approval)
+#   ci.yml build ──▶ deploy-dev (automatic) ──▶ deploy-prod (manual approval)
 #
 # Each job renders the overlay with the exact SHA tag, applies it, waits for
 # the rollout, asserts /version reports the commit, runs the user-journey
@@ -10,10 +10,13 @@
 name: cd
 
 on:
-  workflow_run:
-    workflows: [ci]
-    types: [completed]
-    branches: [adv-devops-project, main]
+  # Called by ci.yml after a successful build on a push to this repository.
+  workflow_call:
+    inputs:
+      sha:
+        description: Full commit SHA whose image sha-<7> ci.yml just pushed
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       sha:
@@ -22,7 +25,7 @@ on:
 
 # One deploy at a time per branch; a newer one waits rather than interleaving.
 concurrency:
-  group: cd-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  group: cd-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -31,19 +34,13 @@ permissions:
 
 env:
   IMAGE: ghcr.io/souvik-cyclic/passx-backend
-  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || inputs.sha }}
+  DEPLOY_SHA: ${{ inputs.sha }}
 
 jobs:
   deploy-dev:
     name: deploy dev (automatic)
-    # Trust boundary: only pushes to this repository may reach the self-hosted
-    # runner. workflow_run also fires for pull_request runs, including forks,
-    # and those must never execute scripts on the laptop.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
-       github.event.workflow_run.head_repository.full_name == github.repository)
+    # Reached only from ci.yml on push events (never pull_request) or by a
+    # manual dispatch; both originate from this repository.
     runs-on: [self-hosted, passx]
     environment:
       name: development
