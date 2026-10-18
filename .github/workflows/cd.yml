@@ -1,0 +1,153 @@
+# PassX CD: deploys the image that ci.yml just published. Runs on the
+# self-hosted runner (the laptop that hosts the kind cluster), so it can reach
+# the cluster that GitHub-hosted runners cannot.
+#
+#   ci.yml success ──▶ deploy-dev (automatic) ──▶ deploy-prod (manual approval)
+#
+# Each job renders the overlay with the exact SHA tag, applies it, waits for
+# the rollout, asserts /version reports the commit, runs the user-journey
+# smoke test, and rolls back automatically if any of that fails.
+name: cd
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [adv-devops-project, main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA to deploy (image sha-<7> must exist in GHCR)
+        required: true
+
+# One deploy at a time per branch; a newer one waits rather than interleaving.
+concurrency:
+  group: cd-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  IMAGE: ghcr.io/souvik-cyclic/passx-backend
+  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || inputs.sha }}
+
+jobs:
+  deploy-dev:
+    name: deploy dev (automatic)
+    # Trust boundary: only pushes to this repository may reach the self-hosted
+    # runner. workflow_run also fires for pull_request runs, including forks,
+    # and those must never execute scripts on the laptop.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: [self-hosted, passx]
+    environment:
+      name: development
+      url: http://dev.passx.127.0.0.1.nip.io/version
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+      - id: tag
+        run: echo "tag=sha-$(git rev-parse --short=7 "$DEPLOY_SHA")" >> "$GITHUB_OUTPUT"
+      - name: Write secrets from the GitHub Environment (never printed, deleted afterwards)
+        run: |
+          umask 077
+          printf 'JWT_SECRET=%s\n' "${{ secrets.JWT_SECRET }}" > k8s/overlays/dev/secrets.env
+          printf 'MONGO_ROOT_USERNAME=%s\nMONGO_ROOT_PASSWORD=%s\n' "${{ secrets.MONGO_ROOT_USERNAME }}" "${{ secrets.MONGO_ROOT_PASSWORD }}" > k8s/overlays/dev/mongo.env
+      - name: Pull image into the kind cluster
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE:${{ steps.tag.outputs.tag }}"
+          kind load docker-image "$IMAGE:${{ steps.tag.outputs.tag }}" --name passx
+      - name: Deploy and wait for rollout
+        run: scripts/deploy.sh dev "${{ steps.tag.outputs.tag }}"
+      - name: Assert the running version is this commit
+        run: |
+          running=$(curl -s http://dev.passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])')
+          test "$running" = "$DEPLOY_SHA" && echo "running commit $running"
+      - name: Smoke test the user journey
+        run: scripts/smoke.sh http://dev.passx.127.0.0.1.nip.io
+      - name: Roll back on failure
+        if: failure()
+        run: |
+          kubectl -n passx-dev rollout undo deploy/backend
+          kubectl -n passx-dev rollout status deploy/backend --timeout=180s
+          echo "::error::deploy-dev failed; rolled back to the previous revision"
+      - name: Remove secrets from the workspace
+        if: always()
+        run: rm -f k8s/overlays/dev/secrets.env k8s/overlays/dev/mongo.env
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### dev"
+            echo "- image \`$IMAGE:${{ steps.tag.outputs.tag }}\`"
+            echo "- commit \`$DEPLOY_SHA\`"
+            echo '```json'; curl -s http://dev.passx.127.0.0.1.nip.io/version; echo; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-prod:
+    name: deploy prod (requires approval)
+    needs: deploy-dev
+    runs-on: [self-hosted, passx]
+    # The "production" Environment has a required reviewer; the job pauses
+    # here until a human approves it in the Actions UI.
+    environment:
+      name: production
+      url: http://passx.127.0.0.1.nip.io/version
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+      - id: tag
+        run: echo "tag=sha-$(git rev-parse --short=7 "$DEPLOY_SHA")" >> "$GITHUB_OUTPUT"
+      - name: Record the currently running release for rollback
+        id: previous
+        run: |
+          prev=$(curl -s http://passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["imageTag"])' || echo unknown)
+          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+          echo "previous release: $prev"
+      - name: Write secrets from the GitHub Environment (never printed, deleted afterwards)
+        run: |
+          umask 077
+          printf 'JWT_SECRET=%s\n' "${{ secrets.JWT_SECRET }}" > k8s/overlays/prod/secrets.env
+          printf 'MONGO_ROOT_USERNAME=%s\nMONGO_ROOT_PASSWORD=%s\n' "${{ secrets.MONGO_ROOT_USERNAME }}" "${{ secrets.MONGO_ROOT_PASSWORD }}" > k8s/overlays/prod/mongo.env
+      - name: Pull image into the kind cluster
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE:${{ steps.tag.outputs.tag }}"
+          kind load docker-image "$IMAGE:${{ steps.tag.outputs.tag }}" --name passx
+      - name: Deploy and wait for rollout
+        run: scripts/deploy.sh prod "${{ steps.tag.outputs.tag }}"
+      - name: Assert the running version is this commit
+        run: |
+          running=$(curl -s http://passx.127.0.0.1.nip.io/version | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])')
+          test "$running" = "$DEPLOY_SHA" && echo "running commit $running"
+      - name: Smoke test the user journey
+        run: scripts/smoke.sh http://passx.127.0.0.1.nip.io
+      - name: Drift check against the rendered overlay
+        run: scripts/drift-check.sh prod "${{ steps.tag.outputs.tag }}"
+      - name: Roll back on failure
+        if: failure()
+        run: |
+          kubectl -n passx-prod rollout undo deploy/backend
+          kubectl -n passx-prod rollout status deploy/backend --timeout=180s
+          echo "::error::deploy-prod failed; rolled back to ${{ steps.previous.outputs.tag }}"
+          curl -s http://passx.127.0.0.1.nip.io/version
+      - name: Remove secrets from the workspace
+        if: always()
+        run: rm -f k8s/overlays/prod/secrets.env k8s/overlays/prod/mongo.env
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### prod"
+            echo "- image \`$IMAGE:${{ steps.tag.outputs.tag }}\` (previous: \`${{ steps.previous.outputs.tag }}\`)"
+            echo "- commit \`$DEPLOY_SHA\`"
+            echo '```json'; curl -s http://passx.127.0.0.1.nip.io/version; echo; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
