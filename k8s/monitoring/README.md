@@ -51,3 +51,4 @@ Alertmanager keeps the default receiver (no paging integration in this project);
 - Jaeger storage is in memory (last 20 000 traces); Loki keeps 48 h; Prometheus 2 d. Fine for a demo cluster, not for audit history.
 - No Alertmanager receiver is configured. Production would route `severity=page` to an on-call tool.
 - Everything is single replica on one node.
+- Loki and Jaeger are fenced by NetworkPolicy, but the Prometheus and Alertmanager web endpoints are not: any pod in the cluster could query metrics or silence alerts. The next step is a default-deny ingress policy for the `monitoring` namespace with explicit allows for Grafana → Prometheus/Alertmanager, Prometheus → Alertmanager and the operator's webhook; it was left out because every scrape and sidecar path would need verifying.
