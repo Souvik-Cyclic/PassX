@@ -2,6 +2,8 @@
 
 How to build, run, deploy, observe and recover the PassX backend. Everything runs on one laptop with Docker; nothing needs a cloud account or sudo.
 
+**Fresh machine to a running app in one line** (after installing the tools below): `make cluster-up && make secrets ENV=dev && make image load deploy ENV=dev && make smoke ENV=dev`, then open http://dev.passx.127.0.0.1.nip.io/docs.
+
 ## Prerequisites
 
 | Tool | Version used | Notes |
