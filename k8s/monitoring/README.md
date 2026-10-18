@@ -46,9 +46,13 @@ Alertmanager keeps the default receiver (no paging integration in this project);
 
 `manifests/dashboards/passx-backend.json` is provisioned through the Grafana sidecar (ConfigMap label `grafana_dashboard: "1"`, folder `PassX`). Panels: Mongo reachable, request rate, 5xx ratio vs SLO, p95 vs SLO, pods ready, restarts, request rate by route, responses by status, CPU and memory vs limits, HPA replicas, Node.js heap, and a Loki panel of warnings and errors. Edit in the UI, then export JSON and commit it here.
 
+## Screenshots
+
+See `docs/evidence.md` section 5a for the dashboard, alert, target and trace screenshots.
+
 ## Limitations
 
-- Jaeger storage is in memory (last 20 000 traces); Loki keeps 48 h; Prometheus 2 d. Fine for a demo cluster, not for audit history.
+- Jaeger storage is in memory (last 5 000 traces; 20 000 was OOM-killed at the previous 512Mi limit); Loki keeps 48 h; Prometheus 2 d. Health and metrics requests are not traced. Fine for a demo cluster, not for audit history.
 - No Alertmanager receiver is configured. Production would route `severity=page` to an on-call tool.
 - Everything is single replica on one node.
 - Loki and Jaeger are fenced by NetworkPolicy, but the Prometheus and Alertmanager web endpoints are not: any pod in the cluster could query metrics or silence alerts. The next step is a default-deny ingress policy for the `monitoring` namespace with explicit allows for Grafana → Prometheus/Alertmanager, Prometheus → Alertmanager and the operator's webhook; it was left out because every scrape and sidecar path would need verifying.

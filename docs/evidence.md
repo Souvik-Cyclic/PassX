@@ -30,6 +30,20 @@ Further traced releases, same shape, each approved by the same reviewer: run 391
 - Traces: Jaeger service `passx-backend` with spans for route, handler, and each Mongo command.
 - `docs/evidence/phase6-alerts.md`: `PassXMongoDown` firing during a forced outage and resolving after recovery, with readiness 503 shedding traffic in between, and the smoke test passing afterwards.
 
+## 5a. Screenshots (supplementary to the API captures above)
+
+Taken on 18 Oct 2026 from the running cluster via `kubectl port-forward`, with the smoke test generating traffic.
+
+| | |
+|---|---|
+| Grafana dashboard, top: Mongo up, request rate, 5xx ratio vs 1% SLO, p95 vs 300 ms, pods ready, restarts, per-route rate | ![Grafana dashboard top](evidence/screenshots/grafana-passx-dashboard-top.jpg) |
+| Grafana dashboard, bottom: CPU and memory vs limits, HPA replicas, Mongo up per pod, Node.js heap, Loki panel with request and trace ids | ![Grafana dashboard bottom](evidence/screenshots/grafana-passx-dashboard-bottom.jpg) |
+| Prometheus: the four PassX alert rules loaded and inactive | ![Prometheus alerts](evidence/screenshots/prometheus-passx-alerts.jpg) |
+| Prometheus: three backend scrape targets up (1 dev, 2 prod) on port 9464 via the ServiceMonitor | ![Prometheus targets](evidence/screenshots/prometheus-backend-targets.jpg) |
+| Jaeger: `POST /auth/login` traces for `passx-backend` | ![Jaeger search](evidence/screenshots/jaeger-login-traces.jpg) |
+| Jaeger: one login trace, 24 spans, from Express middleware through `AuthController.login` to the Mongo `find`/`findOne` commands | ![Jaeger trace](evidence/screenshots/jaeger-login-trace-detail.jpg) |
+| Alertmanager: only the Watchdog heartbeat active (no receiver configured, see limitations) | ![Alertmanager](evidence/screenshots/alertmanager.jpg) |
+
 ## 6. Security
 
 - Secrets: none in git (`gitleaks` job on full history, clean; `.gitignore` for `secrets.env`, `mongo.env`, `grafana.env`; GitHub Environment secrets written to the runner workspace at deploy time and deleted afterwards). One Grafana password was committed by mistake during this work, caught by GitGuardian and the gitleaks job, rotated within minutes, and removed from the branch history; see `docs/evidence/phase4-ci.md`.
