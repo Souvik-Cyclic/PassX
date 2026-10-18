@@ -1,0 +1,59 @@
+# SLO: 99% of requests succeed (status < 500) and p95 latency stays under 300 ms.
+# Recording rules keep dashboards cheap; alerts turn the SLO into actions.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: passx-slo
+  labels:
+    app: backend
+spec:
+  groups:
+    - name: passx.recording
+      interval: 30s
+      rules:
+        - record: passx:http_requests:rate5m
+          expr: sum by (namespace) (rate(http_requests_total[5m]))
+        - record: passx:http_errors:rate5m
+          expr: sum by (namespace) (rate(http_requests_total{status=~"5.."}[5m]))
+        - record: passx:http_error_ratio:5m
+          expr: passx:http_errors:rate5m / passx:http_requests:rate5m
+        - record: passx:http_p95_latency:5m
+          expr: histogram_quantile(0.95, sum by (namespace, le) (rate(http_request_duration_seconds_bucket[5m])))
+    - name: passx.alerts
+      rules:
+        - alert: PassXHighErrorRate
+          expr: passx:http_error_ratio:5m > 0.01 and passx:http_requests:rate5m > 0.1
+          for: 2m
+          labels:
+            severity: page
+            service: passx-backend
+          annotations:
+            summary: "PassX {{ $labels.namespace }}: 5xx ratio {{ $value | humanizePercentage }} over 5m (SLO 1%)"
+            runbook: "docs/runbook.md#high-error-rate"
+        - alert: PassXHighLatency
+          expr: passx:http_p95_latency:5m > 0.3
+          for: 10m
+          labels:
+            severity: warn
+            service: passx-backend
+          annotations:
+            summary: "PassX {{ $labels.namespace }}: p95 latency {{ $value | humanizeDuration }} over 5m (SLO 300ms)"
+            runbook: "docs/runbook.md#high-latency"
+        - alert: PassXMongoDown
+          expr: mongo_up == 0
+          for: 2m
+          labels:
+            severity: page
+            service: passx-backend
+          annotations:
+            summary: "PassX {{ $labels.namespace }}: backend {{ $labels.pod }} cannot reach Mongo"
+            runbook: "docs/runbook.md#mongo-down"
+        - alert: PassXBackendAbsent
+          expr: absent(up{job="backend"} == 1)
+          for: 5m
+          labels:
+            severity: page
+            service: passx-backend
+          annotations:
+            summary: "No healthy PassX backend scrape target for 5m"
+            runbook: "docs/runbook.md#backend-absent"

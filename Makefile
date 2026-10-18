@@ -15,7 +15,7 @@ HOST_dev := dev.passx.127.0.0.1.nip.io
 HOST_prod := passx.127.0.0.1.nip.io
 HOST := $(HOST_$(ENV))
 
-.PHONY: help tools-check cluster-up cluster-down secrets image load deploy smoke drift netpol-test rollback status logs
+.PHONY: help tools-check cluster-up cluster-down secrets image load deploy smoke drift netpol-test rollback status logs monitoring-up monitoring-down grafana prometheus alertmanager jaeger loki
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -72,3 +72,26 @@ status: ## Show pods, HPA, PDB and the running version in $(ENV)
 
 logs: ## Tail backend logs in $(ENV)
 	kubectl -n $(NS) logs deploy/backend -f --tail=100
+
+monitoring-up: ## Install Prometheus, Grafana, Alertmanager, Loki, Promtail, Jaeger and the PassX rules/dashboard (idempotent)
+	scripts/monitoring-up.sh
+
+monitoring-down: ## Remove the monitoring stack
+	-helm uninstall promtail loki kps -n monitoring
+	-kubectl delete -k k8s/monitoring/manifests
+	-kubectl delete namespace monitoring
+
+grafana: ## Port-forward Grafana to http://localhost:3001 (admin password in k8s/monitoring/grafana.env)
+	kubectl -n monitoring port-forward svc/kps-grafana 3001:80
+
+prometheus: ## Port-forward Prometheus to http://localhost:9090
+	kubectl -n monitoring port-forward svc/kps-prometheus 9090:9090
+
+alertmanager: ## Port-forward Alertmanager to http://localhost:9093
+	kubectl -n monitoring port-forward svc/kps-alertmanager 9093:9093
+
+jaeger: ## Port-forward Jaeger UI to http://localhost:16686
+	kubectl -n monitoring port-forward svc/jaeger-query 16686:16686
+
+loki: ## Port-forward Loki API to http://localhost:3100
+	kubectl -n monitoring port-forward svc/loki 3100:3100
