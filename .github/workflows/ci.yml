@@ -26,6 +26,9 @@ env:
   IMAGE: ghcr.io/souvik-cyclic/passx-backend
   # Same mongod the e2e suite uses locally; cached between runs.
   MONGOMS_VERSION: "8.2.6"
+  # On pull_request github.sha is a synthetic merge commit; tag and label the
+  # image with the real head commit so /version matches git log.
+  BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 defaults:
   run:
@@ -137,7 +140,7 @@ jobs:
         working-directory: .
         run: |
           {
-            echo "short_tag=sha-$(git rev-parse --short=7 "$GITHUB_SHA")"
+            echo "short_tag=sha-$(git rev-parse --short=7 "$BUILD_SHA")"
             echo "build_time=$(date -u +%FT%TZ)"
             echo "run_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           } >> "$GITHUB_OUTPUT"
@@ -149,7 +152,7 @@ jobs:
           flavor: latest=false
           tags: |
             type=raw,value=${{ steps.meta.outputs.short_tag }}
-            type=sha,format=long,prefix=sha-
+            type=raw,value=sha-${{ env.BUILD_SHA }}
             type=ref,event=branch
             type=semver,pattern=v{{version}}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -172,23 +175,25 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            APP_COMMIT=${{ github.sha }}
+            APP_COMMIT=${{ env.BUILD_SHA }}
             APP_IMAGE_TAG=${{ steps.meta.outputs.short_tag }}
             APP_BUILD_TIME=${{ steps.meta.outputs.build_time }}
             APP_PIPELINE_URL=${{ steps.meta.outputs.run_url }}
       - name: Trivy image scan (fail on fixable HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}:${{ steps.meta.outputs.short_tag }}
+          version: v0.76.0
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
           format: table
       - name: Trivy SARIF for the Security tab
         if: always()
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}:${{ steps.meta.outputs.short_tag }}
+          version: v0.76.0
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           format: sarif
@@ -200,7 +205,7 @@ jobs:
           sarif_file: trivy-image.sarif
           category: trivy-image
       - name: Image smoke test (container starts, /version reports this commit)
-        run: scripts/docker-smoke.sh "${IMAGE}:${{ steps.meta.outputs.short_tag }}" "${GITHUB_SHA}"
+        run: scripts/docker-smoke.sh "${IMAGE}:${{ steps.meta.outputs.short_tag }}" "${BUILD_SHA}"
       - name: Summary
         working-directory: .
         run: |
@@ -208,6 +213,6 @@ jobs:
             echo "### Image"
             echo "- \`${IMAGE}:${{ steps.meta.outputs.short_tag }}\`"
             echo "- digest \`${{ steps.push.outputs.digest }}\`"
-            echo "- commit \`${GITHUB_SHA}\`"
+            echo "- commit \`${BUILD_SHA}\`"
             echo "- run ${{ steps.meta.outputs.run_url }}"
           } >> "$GITHUB_STEP_SUMMARY"
