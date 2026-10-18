@@ -96,7 +96,7 @@ flowchart TD
 |---|---|---|
 | Mongo unreachable | `/health/ready` returns 503 within 1.5 s; pod leaves the Service endpoints; liveness stays green so no restart loop; backend reconnects on its own | `mongo_up` 0, `PassXMongoDown` alert, readiness events |
 | Backend crash or hang | liveness fails, kubelet restarts the container; the other replica keeps serving | restart counter on the dashboard |
-| Bad release | new pods never pass readiness; old pods keep serving; `rollout status` times out; pipeline runs `rollout undo` | evidence in `docs/evidence/phase3-rollback-local.md` and the CD run |
+| Bad release | new pods never pass readiness; old pods keep serving; `rollout status` times out; pipeline runs `rollout undo` | evidence in `docs/evidence/rollout-and-rollback-local.md` and the CD run |
 | Traffic spike (prod) | HPA scales 2→4 at 70% CPU; PDB keeps one pod through voluntary disruption; rate limiting protects `/auth` | HPA panel, 429s in metrics |
 | Node pressure | requests/limits on every container decide scheduling and eviction order | kube-state-metrics |
 | Secret rotation | JWT: hashed Secret rolls backend pods. Mongo: fixed-name Secret, password must be changed inside Mongo first (see `k8s/README.md`) | `rollout status` |

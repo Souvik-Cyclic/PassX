@@ -110,7 +110,7 @@ Make the GHCR package public (Packages → passx-backend → Package settings �
 `PassXMongoDown`: a backend pod cannot ping Mongo for 2 minutes. Readiness is already failing, so traffic is shed.
 1. `kubectl -n passx-<env> get pod mongo-0`; `kubectl -n passx-<env> describe pod mongo-0` for evictions or PVC problems; `kubectl logs mongo-0`.
 2. Scale or restart: `kubectl -n passx-<env> rollout restart sts/mongo`. The backend reconnects by itself; no restart needed.
-3. Evidence of the alert firing and resolving: `docs/evidence/phase6-alerts.md`.
+3. Evidence of the alert firing and resolving: `docs/evidence/alert-firing-recovery.md`.
 
 ### backend-absent
 `PassXBackendAbsent`: Prometheus has no healthy backend target for 5 minutes.
@@ -126,7 +126,7 @@ Make the GHCR package public (Packages → passx-backend → Package settings �
 | Check live state against git | `make drift ENV=prod TAG=sha-<7>` |
 | Cluster is wedged | `make cluster-down && make cluster-up && make deploy ENV=dev` (data in PVCs is lost; this is a demo cluster) |
 
-`docs/evidence/phase3-rollback-local.md` records a real rolling update under traffic and a stalled release that was undone.
+`docs/evidence/rollout-and-rollback-local.md` records a real rolling update under traffic and a stalled release that was undone.
 
 ## Known limitations
 

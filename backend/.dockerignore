@@ -11,7 +11,6 @@ README.md
 .env.*
 coverage
 test
-.superpowers
 .node-version
 Dockerfile
 .dockerignore

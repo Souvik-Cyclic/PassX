@@ -1,6 +1,6 @@
 # Release control evidence: a bad release caught and rolled back by the pipeline
 
-The local demonstration in `phase3-rollback-local.md` showed the mechanics with `kubectl`. This one goes through the real delivery path: a commit, CI, and the CD job on the self-hosted runner, with no manual intervention after the push.
+The local demonstration in `rollout-and-rollback-local.md` showed the mechanics with `kubectl`. This one goes through the real delivery path: a commit, CI, and the CD job on the self-hosted runner, with no manual intervention after the push.
 
 ## The bad release
 
