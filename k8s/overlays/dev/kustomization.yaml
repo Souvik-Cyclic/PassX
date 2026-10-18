@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: passx-dev
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+images:
+  - name: ghcr.io/souvik-cyclic/passx-backend
+    newTag: dev
+
+# Env files are gitignored (`make secrets ENV=dev`); backend-secrets is hash-suffixed.
+# mongo-secrets name is fixed: MONGO_INITDB_ROOT_* only apply on first init (k8s/README.md).
+secretGenerator:
+  - name: backend-secrets
+    envs:
+      - secrets.env
+  - name: mongo-secrets
+    envs:
+      - mongo.env
+    options:
+      disableNameSuffixHash: true
+
+patches:
+  - path: patches/ingress-host.yaml
+  - path: patches/replicas.yaml
+
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=debug

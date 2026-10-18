@@ -6,9 +6,7 @@ import { VaultItem, VaultSchema } from './schema/vault.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: VaultItem.name, schema: VaultSchema },
-    ]),
+    MongooseModule.forFeature([{ name: VaultItem.name, schema: VaultSchema }]),
   ],
   controllers: [VaultController],
   providers: [VaultService],

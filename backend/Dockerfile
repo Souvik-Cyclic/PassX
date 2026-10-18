@@ -1,29 +1,66 @@
+# syntax=docker/dockerfile:1
+
+# ---------- build stage ----------
 FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+# Pin pnpm to the version declared in package.json "packageManager".
+RUN npm install -g pnpm@12.4.1 && npm cache clean --force
 
-RUN npm install -g pnpm && \
-    pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
 RUN pnpm run build
 
+# ---------- runtime stage ----------
 FROM node:24-alpine
+
+ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-RUN npm install -g pnpm && \
-    pnpm install --prod --frozen-lockfile
+# Prod deps only; pnpm, its store and the npm cache are removed in this same layer.
+RUN npm install -g pnpm@12.4.1 && \
+    pnpm install --prod --frozen-lockfile && \
+    rm -rf "$(pnpm store path)" && \
+    npm uninstall -g pnpm && \
+    npm cache clean --force && \
+    rm -rf /root/.cache /root/.npm /root/.local && \
+    # npm is not needed at runtime and bundles vulnerable deps of its own
+    rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack && \
+    chown -R node:node /app
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder --chown=node:node /app/dist ./dist
 
-# COPY .env .env
+# Build metadata; CI passes these, local builds fall back to "unknown".
+ARG APP_COMMIT=unknown
+ARG APP_IMAGE_TAG=unknown
+ARG APP_BUILD_TIME=unknown
+ARG APP_PIPELINE_URL=unknown
 
-EXPOSE 3000
+ENV APP_COMMIT=$APP_COMMIT \
+    APP_IMAGE_TAG=$APP_IMAGE_TAG \
+    APP_BUILD_TIME=$APP_BUILD_TIME \
+    APP_PIPELINE_URL=$APP_PIPELINE_URL
 
-CMD ["node", "dist/main"]
+LABEL org.opencontainers.image.title="passx-backend" \
+      org.opencontainers.image.source="https://github.com/Souvik-Cyclic/PassX" \
+      org.opencontainers.image.revision="$APP_COMMIT" \
+      org.opencontainers.image.version="$APP_IMAGE_TAG" \
+      org.opencontainers.image.created="$APP_BUILD_TIME" \
+      org.opencontainers.image.url="$APP_PIPELINE_URL"
+
+# Run unprivileged (node = uid 1000 in the official image).
+USER node
+
+# 3000 = HTTP API, 9464 = Prometheus metrics (METRICS_PORT default).
+EXPOSE 3000 9464
+
+# No HEALTHCHECK: Kubernetes probes own liveness/readiness.
+CMD ["node", "dist/main.js"]

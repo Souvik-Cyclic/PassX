@@ -1,0 +1,51 @@
+# Loki and Jaeger have no auth: Loki 3100 from Promtail/Grafana only; Jaeger OTLP
+# 4317/4318 from backend namespaces, UI 16686 from Grafana. port-forward still works.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loki-allow-promtail-grafana
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: promtail
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 3100
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jaeger-allow-apps-grafana
+spec:
+  podSelector:
+    matchLabels:
+      app: jaeger
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values: [passx-dev, passx-prod]
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 16686

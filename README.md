@@ -24,6 +24,7 @@
 - [API Documentation](#-api-documentation)
 - [Security Features](#-security-features)
 - [Screenshots](#-screenshots)
+- [DevOps: Kubernetes, CI/CD, Observability](#️-devops-kubernetes-cicd-observability)
 - [Contributing](#-contributing)
 
 ## 🎯 Problem Statement
@@ -570,6 +571,22 @@ The documentation includes:
   <img src="mobile-app/assets/screenshots/passx-trash.jpeg" alt="Trash Screen" width="250"/>
   <img src="mobile-app/assets/screenshots/passx-alert.jpeg" alt="Custom Alert" width="250"/>
 </div>
+
+## ⚙️ DevOps: Kubernetes, CI/CD, Observability
+
+The backend runs on a local Kubernetes cluster (kind) with a full delivery pipeline and observability stack. Everything is reproducible from this repository on a laptop with Docker; no cloud account is needed.
+
+| Area | What is in place | Where |
+|---|---|---|
+| Kubernetes | kind + Calico, Kustomize base with `dev`/`prod` overlays, Deployment with startup/liveness/readiness probes, Mongo StatefulSet, HPA, PDB, NetworkPolicies, hardened pods | [`k8s/README.md`](k8s/README.md) |
+| CI | lint, unit + e2e tests, gitleaks, `pnpm audit`, manifest validation, image build, Trivy gate, push to GHCR tagged by commit | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`docs/pipeline.md`](docs/pipeline.md) |
+| CD | self-hosted runner deploys dev automatically and prod after approval; `/version` ties the running pod to the pipeline run; automatic rollback | [`.github/workflows/cd.yml`](.github/workflows/cd.yml) |
+| Observability | Prometheus, Grafana dashboard, Loki logs, Jaeger traces, SLO alerts with runbook actions | [`k8s/monitoring/README.md`](k8s/monitoring/README.md) |
+| Security | validated config, helmet, CORS allowlist, rate limiting, non-root read-only containers, secrets outside git, scanning in CI | [`docs/decisions.md`](docs/decisions.md) |
+| Run it | `make cluster-up && make secrets ENV=dev && make image load deploy ENV=dev && make smoke ENV=dev` | [`docs/runbook.md`](docs/runbook.md) |
+| Evidence | pipeline runs tied to commits, rolling update under traffic, rollback, alert firing | [`docs/evidence.md`](docs/evidence.md) |
+
+Architecture, request path and commit-to-pod flow with diagrams: [`docs/architecture.md`](docs/architecture.md).
 
 ## 🤝 Contributing
 

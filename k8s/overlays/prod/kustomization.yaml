@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: passx-prod
+
+resources:
+  - namespace.yaml
+  - ../../base
+  - hpa.yaml
+  - pdb.yaml
+
+images:
+  - name: ghcr.io/souvik-cyclic/passx-backend
+    newTag: dev
+
+# See overlays/dev/kustomization.yaml for why Mongo credentials are separate.
+secretGenerator:
+  - name: backend-secrets
+    envs:
+      - secrets.env
+  - name: mongo-secrets
+    envs:
+      - mongo.env
+    options:
+      disableNameSuffixHash: true
+
+patches:
+  - path: patches/ingress-host.yaml

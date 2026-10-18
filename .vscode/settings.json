@@ -1,0 +1,23 @@
+{
+  "search.exclude": {
+    "**/mobile-app/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/coverage/**": true,
+    "**/.superpowers/**": true,
+    "**/docs/superpowers/**": true,
+    "**/pnpm-lock.yaml": true,
+    "**/package-lock.json": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.superpowers": true
+  },
+  "files.watcherExclude": {
+    "**/mobile-app/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true
+  }
+}

@@ -1,0 +1,19 @@
+# Only backend pods in this namespace may open connections to Mongo.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mongo-allow-backend
+spec:
+  podSelector:
+    matchLabels:
+      app: mongo
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 27017

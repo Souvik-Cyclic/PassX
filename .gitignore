@@ -1,0 +1,6 @@
+
+# Kubernetes secrets, generated locally by `make secrets`
+k8s/overlays/*/secrets.env
+k8s/overlays/*/mongo.env
+# Grafana admin password, generated locally
+k8s/monitoring/grafana.env
