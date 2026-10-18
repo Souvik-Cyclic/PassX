@@ -55,7 +55,7 @@ NETWORK_ARGS=()
 
 CONTAINER="$(docker run -d "${NETWORK_ARGS[@]}" \
   -e MONGO_URI="$MONGO_URI" \
-  -e JWT_SECRET=smoke \
+  -e JWT_SECRET=smoke-test-secret-value-at-least-32-chars \
   -p 127.0.0.1:0:3000 \
   "$IMAGE")"
 

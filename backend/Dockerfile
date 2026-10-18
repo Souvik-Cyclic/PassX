@@ -34,6 +34,8 @@ RUN npm install -g pnpm@12.4.1 && \
     npm uninstall -g pnpm && \
     npm cache clean --force && \
     rm -rf /root/.cache /root/.npm /root/.local && \
+    # npm is not needed at runtime and bundles vulnerable deps of its own
+    rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack && \
     chown -R node:node /app
 
 COPY --from=builder --chown=node:node /app/dist ./dist
