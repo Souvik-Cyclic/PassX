@@ -214,8 +214,8 @@ jobs:
   deploy:
     name: deploy
     needs: build
-    # Only pushes (never pull_request builds) reach the self-hosted runner.
-    if: github.event_name == 'push'
+    # Only branch pushes reach the self-hosted runner; tags publish a release instead.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/')
     uses: ./.github/workflows/cd.yml
     with:
       sha: ${{ github.sha }}
@@ -223,3 +223,25 @@ jobs:
     permissions:
       contents: read
       packages: read
+
+  release:
+    name: github release
+    needs: build
+    # A v* tag publishes a GitHub Release pointing at the image built from that commit.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Create release with generated notes
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          generate_release_notes: true
+          body: |
+            **Image:** `${{ env.IMAGE }}:${{ github.ref_name }}` (also `${{ env.IMAGE }}:${{ needs.build.outputs.image_tag }}`)
+            **Digest:** `${{ needs.build.outputs.image_digest }}`
+            **Commit:** `${{ github.sha }}`
+            **Pipeline run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Deploy with `make deploy ENV=prod TAG=${{ needs.build.outputs.image_tag }}` or through the CD workflow.

@@ -36,6 +36,14 @@ push / PR
 - **Secrets never touch git.** Deploy jobs write `secrets.env` and `mongo.env` from GitHub Environment secrets with `umask 077` and delete them in an `always()` step.
 - **Superseded runs are cancelled** (`concurrency` per ref) so an older commit cannot be deployed after a newer one.
 
+## Releases
+
+A release is a `v*` git tag. Pushing one runs the same CI gates, pushes the image with the `vX.Y.Z` tag next to `sha-<7>`, and the `release` job creates a GitHub Release with generated notes, the image reference, its digest and the run URL. Tags never deploy by themselves; deployment stays with branch pushes and the production approval, or `cd.yml` run by hand with the commit SHA.
+
+```
+git tag v1.0.0 <commit> && git push origin v1.0.0
+```
+
 ## Reading a run
 
 1. Open the run from the commit's status check or the Actions tab.
