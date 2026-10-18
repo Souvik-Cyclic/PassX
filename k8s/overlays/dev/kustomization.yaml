@@ -35,5 +35,3 @@ configMapGenerator:
     behavior: merge
     literals:
       - LOG_LEVEL=debug
-      # Deliberate bad release for the rollback demonstration: readiness never passes.
-      - BREAK_READINESS=true
