@@ -471,7 +471,7 @@
           },
           "expr": "histogram_quantile(0.5, sum by (namespace, le) (rate(http_request_duration_seconds_bucket{namespace=~\"$namespace\"}[5m])))",
           "legendFormat": "{{namespace}} p50",
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -584,7 +584,7 @@
           },
           "expr": "max(kube_pod_container_resource_limits{namespace=~\"$namespace\", container=\"backend\", resource=\"cpu\"})",
           "legendFormat": "limit",
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -637,7 +637,7 @@
           },
           "expr": "max(kube_pod_container_resource_limits{namespace=~\"$namespace\", container=\"backend\", resource=\"memory\"})",
           "legendFormat": "limit",
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -690,7 +690,7 @@
           },
           "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"passx-prod\", horizontalpodautoscaler=\"backend\"}",
           "legendFormat": "max",
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "fieldConfig": {

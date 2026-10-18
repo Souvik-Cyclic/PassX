@@ -14,7 +14,9 @@ spec:
         - record: passx:http_requests:rate5m
           expr: sum by (namespace) (rate(http_requests_total[5m]))
         - record: passx:http_errors:rate5m
-          expr: sum by (namespace) (rate(http_requests_total{status=~"5.."}[5m]))
+          # "or ... * 0" keeps a zero series per namespace when no 5xx has ever
+          # been recorded, so the ratio and the alert still evaluate.
+          expr: sum by (namespace) (rate(http_requests_total{status=~"5.."}[5m])) or (sum by (namespace) (rate(http_requests_total[5m])) * 0)
         - record: passx:http_error_ratio:5m
           expr: passx:http_errors:rate5m / passx:http_requests:rate5m
         - record: passx:http_p95_latency:5m

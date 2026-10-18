@@ -1,5 +1,9 @@
 import type { NodeSDK } from '@opentelemetry/sdk-node';
 
+/** Probe and scrape requests arrive every few seconds and carry no user signal. */
+export const isNoiseRequest = (url: string | undefined): boolean =>
+  /^\/(health(\/|\?|$)|metrics(\?|$))/.test(url ?? '');
+
 /**
  * Starts OpenTelemetry tracing when OTEL_EXPORTER_OTLP_ENDPOINT is set.
  * Must run before any other module is imported so auto-instrumentation can
@@ -38,6 +42,9 @@ export function startTracing(
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': { enabled: false },
+        '@opentelemetry/instrumentation-http': {
+          ignoreIncomingRequestHook: (req) => isNoiseRequest(req.url),
+        },
       }),
     ],
   });

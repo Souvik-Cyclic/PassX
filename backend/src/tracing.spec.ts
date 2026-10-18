@@ -1,4 +1,4 @@
-import { startTracing } from './tracing';
+import { isNoiseRequest, startTracing } from './tracing';
 
 describe('startTracing', () => {
   it('is inert when no OTLP endpoint is configured', () => {
@@ -24,4 +24,14 @@ describe('startTracing', () => {
     expect(typeof sdk?.shutdown).toBe('function');
     await expect(sdk!.shutdown()).resolves.toBeUndefined();
   }, 10_000);
+
+  it('does not trace probe and scrape traffic', () => {
+    expect(isNoiseRequest('/health')).toBe(true);
+    expect(isNoiseRequest('/health/live')).toBe(true);
+    expect(isNoiseRequest('/health/ready?x=1')).toBe(true);
+    expect(isNoiseRequest('/metrics')).toBe(true);
+    expect(isNoiseRequest('/vault')).toBe(false);
+    expect(isNoiseRequest('/auth/login')).toBe(false);
+    expect(isNoiseRequest(undefined)).toBe(false);
+  });
 });
